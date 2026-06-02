@@ -483,6 +483,7 @@ const ACTS = {
     { t:'早起出门跑个步', i:'🏃', e:-10, m:10, w:5, s:0, l:5, loc:'street', msg:'晨跑路上没人，空气凉凉的，阳光从树叶间洒下来。今天起得值了。' },
     { t:'泡杯咖啡阳台发呆', i:'☕', e:5, m:8, w:0, s:0, l:8, loc:'home', msg:'捧着热咖啡看窗外，早起城市有种安静的温柔。偶尔有几辆车驶过。' },
     { t:'躺着刷会儿手机', i:'📱', e:5, m:5, w:0, s:5, l:0, loc:'home', msg:'刷到几条有趣的，又看了几个路亚视频，手又痒了。' },
+    { t:'昨晚通宵了，直接不睡了', i:'💀', e:-25, m:-10, w:0, s:0, l:-10, loc:'home', msg:'眼睛红得像兔子。身体在抗议：别再这样了周哥，你不是二十岁了。', danger:true },
   ],
   morning: [
     { t:'带上路亚竿去钓鱼', i:'🎣', e:-5, m:18, w:-10, s:0, l:15, loc:'fishing', msg:'甩了十几竿，突然一个顿口！一条漂亮的鲈鱼出水。今天渔获不错。', game:'fishing' },
@@ -553,6 +554,28 @@ const RANDOM_EVENTS = [
   { icon:'🐱', title:'小区橘猫来找你了', desc:'楼下那只橘猫又蹲在你家门口，喂了根火腿肠它就赖着不走在你脚边蹭来蹭去。这只猫跟你有缘。', e:0, m:12, w:0, s:0, l:10, cat:'cat' },
   { icon:'📦', title:'快递到了', desc:'之前买的渔具和游戏外设同时到了。拆快递的快乐谁懂啊一口气拆了三个包裹，像过圣诞节。', e:0, m:10, w:0, s:0, l:8, cat:'life' },
   { icon:'☀️', title:'天气突然放晴', desc:'本来阴沉沉的天突然晴了，阳光普照。心情莫名其妙就好了起来。这种天不出门是犯罪。', e:5, m:12, w:0, s:0, l:10, cat:'weather' },
+  // Dangerous/funny events
+  { icon:'🤢', title:'吃坏肚子了', desc:'昨天那家夜宵摊不太干净...周哥抱着马桶度过了难忘的两小时。精力-20，但瘦了两斤也算是收获？', e:-20, m:-15, w:0, s:0, l:-10, cat:'life' },
+  { icon:'🪝', title:'鱼钩扎手了', desc:'换饵的时候不小心钩子扎进了手指。出了点血，疼得龇牙咧嘴。钓鱼人的日常——荣耀的伤疤又添一枚。', e:-8, m:-10, w:0, s:0, l:-5, cat:'fishing' },
+  { icon:'🍾', title:'喝断片了', desc:'昨晚的第二场太猛了...醒来发现自己在沙发上，手机不见了，头上多了顶别人的帽子。发生了什么？', e:-25, m:-10, w:0, s:8, l:-15, cat:'bar' },
+  { icon:'💻', title:'陪玩店电脑蓝屏了', desc:'正打排位呢三台电脑同时蓝屏。排查了半天是电路问题，今天怕是修不好了。心态炸裂。', e:-10, m:-15, w:-5, s:0, l:-10, cat:'gaming' },
+  { icon:'🚗', title:'车被贴条了', desc:'停在路边忘了时间，回来发现挡风玻璃上多了一张罚单。200块没了，心情瞬间不美丽。', e:0, m:-12, w:0, s:0, l:-10, cat:'life' },
+  { icon:'💔', title:'她发的朋友圈', desc:'刷到她发了一条朋友圈——跟朋友在咖啡店。照片里没有你，但有个不认识的男生。周哥盯着看了很久。', e:0, m:-15, w:0, s:0, l:-8, cat:'love' },
+  { icon:'🎣', title:'鱼线缠成一团', desc:'风太大了线杯炸了，线缠成了鸟巢。坐在水边解了半小时，路人以为你在织毛衣。路亚人的噩梦。', e:-5, m:-10, w:0, s:0, l:-8, cat:'fishing' },
+  { icon:'😈', title:'朋友挑衅拼酒', desc:'"周哥你不是能喝吗？今晚看谁先倒！"——你明知道这是激将法但还是接下了。后果自负吧。', e:-15, m:5, w:0, s:10, l:-10, cat:'bar' },
+  { icon:'💢', title:'在游戏里被虐了', desc:'排位连跪五把，最后一把被对面秀到头皮发麻。键盘差点砸了。打游戏这么多年没见过这么离谱的。', e:-5, m:-18, w:0, s:-5, l:-5, cat:'gaming' },
+  { icon:'🧊', title:'冰桶挑战上头了', desc:'跟兄弟们打赌输了，一桶冰水从头浇到脚。透心凉。不过倒是清醒了不少。就是一直在打喷嚏。', e:-10, m:5, w:0, s:8, l:5, cat:'life' },
+  // 🤪 荒诞意外事件（稀有触发）
+  { icon:'🦈', title:'钓到鲨鱼了！！', desc:'等等...这里是淡水水库啊？！一条鲨鱼跃出水面咬住了你的路亚饵！周哥跟鲨鱼搏斗了三十秒后——线断了。人没事，但魂飞了一半。', e:-15, m:-10, w:0, s:20, l:-10, cat:'fishing' },
+  { icon:'👽', title:'外卖里吃出外星人头骨', desc:'一口咬下去嘎嘣脆。吐出来一看——这绝对不是鸡骨头。形状太规则了，上面还刻着看不懂的文字。周哥觉得胃在翻江倒海...', e:-25, m:-15, w:0, s:10, l:-15, cat:'life' },
+  { icon:'🚗', title:'被特朗普的车撞了', desc:'开车兜风的时候前面一辆加长林肯突然倒车！车窗摇下来——"Sorry! I thought you were running for President! You look like trouble!" 周哥：？？？', e:-30, m:-5, w:0, s:15, l:-20, cat:'street' },
+  { icon:'🛸', title:'被外星人绑架了', desc:'一道绿光从天而降。醒来的时候躺在水库边，记忆空白了三个小时。口袋里多了个发光的小球，裤子上有奇怪的黏液。钓鱼佬的日常？', e:-20, m:5, w:0, s:25, l:10, cat:'fishing' },
+  { icon:'🧟', title:'陪玩店闹丧尸', desc:'半夜店里突然停电，应急灯亮起的时候——窗户外面一群"丧尸"在拍玻璃！仔细一看是隔壁漫展的coser走错了门。心跳飙到180。', e:-10, m:5, w:0, s:15, l:5, cat:'gaming' },
+  { icon:'🐉', title:'农场发现恐龙蛋', desc:'朋友农场挖地基的时候挖出一个半米长的蛋。朋友圈炸了，专家来了，结果是隔壁小孩埋的鸵鸟蛋模型。白激动一场。', e:0, m:-5, w:0, s:20, l:15, cat:'farm' },
+  { icon:'🎤', title:'KTV里被认成明星', desc:'一个喝醉的大哥非说你是某说唱歌手，拉着你合影还要签名。周哥签了个"周照宗"，大哥满意地走了。', e:0, m:8, w:0, s:12, l:8, cat:'bar' },
+  { icon:'🦞', title:'小龙虾暴动了', desc:'正在吃小龙虾，盆里一只特别大的突然夹住了你的手指。甩都甩不掉，整个餐厅的人都在看。服务员拿剪刀才解救下来。', e:-5, m:5, w:0, s:8, l:-5, cat:'restaurant' },
+  { icon:'🌪️', title:'被龙卷风刮到隔壁市', desc:'钓鱼的时候天突然黑了，一阵狂风把你连人带竿吹上了天。落地的时候在隔壁市的水库边，手里还攥着路亚竿。打车回去花了两百。', e:-20, m:10, w:0, s:20, l:-5, cat:'fishing' },
+  { icon:'🦍', title:'健身房来了只大猩猩', desc:'不，不是开玩笑。一个穿着猩猩服的网红在健身房拍视频，非要跟你比赛卧推。你的训练计划被打乱了，但视频火了。', e:-10, m:10, w:0, s:15, l:10, cat:'gym' },
 ];
 
 // Achievements
@@ -1028,7 +1051,8 @@ function render() {
     if (a.w>0) tags.push(`<span class="c-tag tag-up">📋+${a.w}</span>`);
     if (l>0) tags.push(`<span class="c-tag tag-up">🍀+${l}</span>`);
     const gameTag = a.game ? `<span class="c-tag tag-up">🎮小游戏</span>` : '';
-    if (a.loc==='gaming') tags.push(`<span class="c-tag tag-up">🕹️街机</span>`);
+    if (a.loc==='gaming' && Math.random()<0.3) tags.push(`<span class="c-tag tag-up">🕹️街机</span>`);
+    if (a.danger) tags.push(`<span class="c-tag tag-down">⚠️危险</span>`);
     const wTag = wb ? ' ✨' : '';
     return `<div class="choice" onclick="pick(${i})">
       <div class="c-icon">${a.i}</div>
@@ -1095,8 +1119,81 @@ function pick(idx) {
   }
 }
 
+// === DEATH CHECK ===
+let lastEventIcon = ''; // Track last event for death flavor
+function checkDeath() {
+  // Absurd death triggers (5% chance when stats very low after dangers)
+  if (G.energy <= 5 && Math.random()<0.08 && lastEventIcon==='👽') {
+    showDeathScreen('外星食物中毒身亡', '👽', '那个外星人头骨...果然不能随便吃。周哥口吐绿沫倒在地上，手机屏幕还亮着——最后一条消息是发给她的。\n\n死因：外星头骨食物中毒。\n墓碑上写："他只是想尝一口。"');
+    return true;
+  }
+  if (G.energy <= 10 && lastEventIcon==='🚗' && Math.random()<0.1) {
+    showDeathScreen('被特朗普撞飞', '🚗', '特朗普的加长林肯倒车太猛了，直接把周哥连人带车顶进了路亚水库。\n\n临终遗言是："告诉我的鱼竿...我爱它们..."\n\n死因：美国总统候选人的路怒症。\n副驾上的金毛犬是目击证人。');
+    return true;
+  }
+  if (G.energy <= 8 && lastEventIcon==='🦈' && Math.random()<0.12) {
+    showDeathScreen('淡水鲨鱼咬死', '🦈', '那条水库里的鲨鱼又回来了！而且这次它带了兄弟。周哥还没来得及收竿就被拖进了水里。\n\n第二天新闻头条：《淡水水库惊现鲨鱼群，一路亚钓友英勇喂鱼》\n\n死因：被不该出现在这里的鱼咬死。');
+    return true;
+  }
+  if (G.energy <= 5 && lastEventIcon==='🌪️' && Math.random()<0.1) {
+    showDeathScreen('龙卷风二次来袭', '🌪️', '刚落地还没站稳，又一个龙卷风来了。这次直接把人吹到了外省。落地姿势不太对...\n\n周哥成为史上第一个因龙卷风跨省的路亚钓友。\n\n死因：天气太狂野。');
+    return true;
+  }
+  if (G.energy <= 0) {
+    const deaths = [
+      {t:'过劳倒下',i:'⚡',d:'精力耗尽...周哥连续折腾终于扛不住了。眼前一黑倒了下去。\n\n游戏结束——但别担心，明天又是新的一天。'},
+      {t:'在陪玩店猝死',i:'💻',d:'连熬三个通宵打游戏，最后一局排位还没打完就趴在键盘上了。\n\n电竞精神永存。键盘上的脸印成了陪玩店的传说。'},
+      {t:'被自己做的菜毒死',i:'🍳',d:'今天发挥失常...那盘小炒黄牛肉放了双倍的辣椒和半瓶不知名调料。\n\n死因：对自己的厨艺过于自信。'},
+    ];
+    const d = deaths[Math.floor(Math.random()*deaths.length)];
+    showDeathScreen(d.t, d.i, d.d); return true;
+  }
+  if (G.mood <= 0) {
+    const deaths = [
+      {t:'心态崩了',i:'💔',d:'心情跌到谷底...周哥把自己关在房间里不想见任何人。连路亚竿都不想碰了。\n\n巨蟹座的自愈能力很强——但今天先崩着吧。'},
+      {t:'被她无视了',i:'💔',d:'发了三条消息全部已读不回。周哥躺在床上盯着天花板，感觉整个世界都灰了。\n\n死因：巨蟹座的心碎。'},
+      {t:'emo到脱水',i:'😢',d:'连续听了四个小时的悲伤情歌，眼泪流干了。严重脱水。\n\n酷狗音乐年度总结：您今年单曲循环最多的歌——《后来》。'},
+    ];
+    const d = deaths[Math.floor(Math.random()*deaths.length)];
+    showDeathScreen(d.t, d.i, d.d); return true;
+  }
+  if (G.energy <= 10 && Math.random()<0.3) {
+    const bg=document.createElement('div');bg.className='modal-bg';
+    bg.innerHTML=`<div class="modal-card"><div class="ev-icon">⚠️</div><h3>危险警告！</h3><div class="ev-text" style="color:#ef4444">周哥体力严重透支！再不好好休息可能真的要倒下了...</div><button onclick="this.closest('.modal-bg').remove()" style="background:#ef4444">😰 知道了</button></div>`;
+    document.body.appendChild(bg);
+  }
+  if (G.mood <= 15 && Math.random()<0.3) {
+    const bg=document.createElement('div');bg.className='modal-bg';
+    bg.innerHTML=`<div class="modal-card"><div class="ev-icon">🆘</div><h3>情绪崩溃边缘</h3><div class="ev-text" style="color:#ef4444">周哥心情极度低落，再受刺激可能就崩了。快去喝杯威士忌或者找朋友聊聊吧！</div><button onclick="this.closest('.modal-bg').remove()">😢 振作</button></div>`;
+    document.body.appendChild(bg);
+  }
+  return false;
+}
+
+function showDeathScreen(title, icon, desc) {
+  document.getElementById('choicesArea').innerHTML = '';
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal-card">
+    <div class="ev-icon">${icon}</div>
+    <h3 style="color:#ef4444">💀 ${title}</h3>
+    <div class="ev-text" style="white-space:pre-line">${desc}</div>
+    <div style="color:#9ca3af;font-size:.7em;margin:8px 0">存活天数：${G.day} · 总分：${G.score}</div>
+    <button onclick="revive();this.closest('.modal-bg').remove()" style="background:#ef4444">🔄 重新来过</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+
+function revive() {
+  G.energy=60; G.mood=50; G.work=30; G.social=40; G.luck=40;
+  G.timeIdx=0; G.logs=[]; G.day++; G.scene='home'; G.challengeDone=false;
+  rollWeather(); rollFortune(); rollChallenge();
+  setScene('home',false); updStats(); render();
+}
+
 function finishPick(act) {
   apply(act);
+  // Death check after applying effects
+  if (checkDeath()) return;
 
   // Scene transition animation
   const area = document.getElementById('sceneArea');
@@ -1160,10 +1257,12 @@ function finishPick(act) {
 
 function randomEvent() {
   const ev = RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
+  lastEventIcon = ev.icon; // track for absurd death triggers
   G.energy=cl(G.energy+(ev.e||0)); G.mood=cl(G.mood+(ev.m||0));
   G.work=cl(G.work+(ev.w||0)); G.social=cl(G.social+(ev.s||0));
   G.luck=cl(G.luck+(ev.l||0));
   updStats();
+  if (checkDeath()) return;
 
   // Cat adoption trigger
   if (ev.cat==='cat' && !G.hasCat && Math.random()<0.4) {
