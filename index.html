@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="周哥的一天">
+<meta name="theme-color" content="#6366f1">
+<meta name="description" content="周哥的一天 - 像素养成模拟器">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192'><rect width='192' height='192' rx='40' fill='%236366f1'/><text x='96' y='120' font-size='100' text-anchor='middle'>🎮</text></svg>">
+<title>周哥的一天</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;800&display=swap');
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 30%, #fce7f3 60%, #dbeafe 100%);
+  min-height: 100vh;
+  display: flex; justify-content: center; align-items: center;
+  padding: 16px;
+  background-size: 400% 400%;
+  animation: bgShift 20s ease infinite;
+}
+@keyframes bgShift {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.game {
+  width: 800px; max-width: 100%;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 8px 60px rgba(99,102,241,0.12), 0 2px 8px rgba(236,72,153,0.06);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
+  padding: 14px 22px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: #fff;
+}
+.header h1 { font-size: 1em; font-weight: 800; letter-spacing: 2px; }
+.header .meta { font-size: 0.75em; opacity: 0.9; display: flex; gap: 12px; align-items: center; }
+.header .meta span { font-weight: 700; }
+.weather-badge {
+  background: rgba(255,255,255,0.2);
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 0.9em;
+}
+
+/* Scene */
+.scene {
+  padding: 20px 22px;
+  display: flex; align-items: center; gap: 20px;
+  border-bottom: 1px solid rgba(99,102,241,0.08);
+  transition: background 0.6s;
+  position: relative; overflow: hidden;
+}
+.scene-home { background: linear-gradient(135deg, #fafafe, #f5f3ff); }
+.scene-office { background: linear-gradient(135deg, #eff6ff, #e0e7ff); }
+.scene-fishing { background: linear-gradient(135deg, #ecfdf5, #d1fae5); }
+.scene-gaming { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+.scene-bar { background: linear-gradient(135deg, #fdf2f8, #fce7f3); }
+.scene-mybar { background: linear-gradient(135deg, #fff7ed, #ffedd5); }
+.scene-farm { background: linear-gradient(135deg, #f0fdf4, #dcfce7); }
+.scene-gym { background: linear-gradient(135deg, #f8fafc, #f1f5f9); }
+.scene-restaurant { background: linear-gradient(135deg, #fff7ed, #fef3c7); }
+.scene-street { background: linear-gradient(135deg, #f0f9ff, #e0f2fe); }
+
+.scene-enter { animation: sceneIn 0.5s ease-out; }
+@keyframes sceneIn { from { opacity:0; transform:scale(0.96); } to { opacity:1; transform:scale(1); } }
+
+.char-box { flex-shrink: 0; text-align: center; position: relative; }
+.char-box canvas { display: block; image-rendering: pixelated; border-radius: 16px; background: #fff; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+.char-box .pet {
+  position: absolute; bottom: -8px; right: -8px;
+  font-size: 1.8em;
+  animation: petBob 2s ease-in-out infinite;
+}
+@keyframes petBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.char-name { margin-top: 5px; font-size: 0.73em; font-weight: 700; color: #6366f1; }
+.achievement-row { display: flex; gap: 3px; justify-content: center; margin-top: 4px; flex-wrap: wrap; }
+.ach-badge {
+  font-size: 0.65em; padding: 2px 7px; border-radius: 8px;
+  background: linear-gradient(135deg, #ede9fe, #fce7f3);
+  color: #7c3aed; font-weight: 600;
+  white-space: nowrap;
+}
+
+.info-card { flex: 1; }
+.info-card .time-chip {
+  display: inline-block;
+  background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+  color: #5b21b6; padding: 4px 14px; border-radius: 20px;
+  font-size: 0.76em; font-weight: 700; margin-bottom: 6px;
+}
+.info-card .loc-title { font-size: 1.1em; font-weight: 800; color: #1e1b4b; margin-bottom: 3px; }
+.info-card .loc-sub { font-size: 0.8em; color: #6b7280; line-height: 1.5; }
+.info-card .weather-note { font-size: 0.7em; color: #8b5cf6; margin-top: 4px; }
+
+/* Stats */
+.stats { display: flex; padding: 10px 18px; border-bottom: 1px solid rgba(99,102,241,0.08); background: rgba(255,255,255,0.5); }
+.stat { flex:1; text-align:center; }
+.stat .icon { font-size: 1em; }
+.stat .val { font-size: 0.82em; font-weight: 800; margin: 1px 0; }
+.stat .bar-wrap { height: 3px; background: #e5e7eb; border-radius: 2px; margin: 2px 4px 0; overflow: hidden; }
+.stat .bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s; }
+.s-energy .val { color: #ef4444; } .s-energy .bar-fill { background: #ef4444; }
+.s-mood .val { color: #f59e0b; } .s-mood .bar-fill { background: #f59e0b; }
+.s-work .val { color: #6366f1; } .s-work .bar-fill { background: #6366f1; }
+.s-social .val { color: #a855f7; } .s-social .bar-fill { background: #a855f7; }
+.s-luck .val { color: #ec4899; } .s-luck .bar-fill { background: #ec4899; }
+
+/* Choices */
+.choices { padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 6px; }
+.choice {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 15px;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.choice:hover {
+  border-color: #a855f7;
+  background: linear-gradient(135deg, #faf5ff, #fdf2f8);
+  transform: translateX(3px);
+  box-shadow: 0 4px 16px rgba(168,85,247,0.1);
+}
+.choice:active { transform: scale(0.98); }
+.choice .c-icon {
+  font-size: 1.6em; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f5f3ff, #fce7f3);
+  border-radius: 10px; flex-shrink: 0;
+}
+.choice .c-body { flex:1; }
+.choice .c-title { font-size: 0.85em; font-weight: 700; color: #1e1b4b; }
+.choice .c-meta { font-size: 0.68em; color: #9ca3af; margin-top: 1px; }
+.choice .c-tags { display: flex; gap: 3px; flex-shrink: 0; flex-wrap: wrap; }
+.c-tag { font-size: 0.6em; padding: 2px 6px; border-radius: 5px; font-weight: 700; }
+.tag-up { background: #dcfce7; color: #16a34a; }
+.tag-down { background: #fef2f2; color: #dc2626; }
+
+/* Result + animation */
+.result-box { padding: 20px; text-align: center; }
+.result-box .r-icon { font-size: 3.5em; animation: resultBounce 0.6s ease-out; }
+@keyframes resultBounce { 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+.result-box .r-text { font-size: 0.88em; color: #4b5563; line-height: 1.7; margin-top: 8px; }
+
+/* Scene animation overlay */
+.scene-anim {
+  position: absolute; inset: 0; z-index: 5;
+  pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.3s;
+}
+.scene-anim.active { opacity: 1; }
+.scene-anim .anim-text {
+  font-size: 2em;
+  animation: animFloat 0.8s ease-out forwards;
+}
+@keyframes animFloat {
+  0% { transform: translateY(20px) scale(0.5); opacity: 0; }
+  50% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 0.9; }
+}
+
+/* Mini-game overlay */
+.minigame-bg {
+  position: fixed; inset:0; z-index:50;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+  display:flex; align-items:center; justify-content:center;
+}
+.minigame-card {
+  background: #fff; border-radius: 20px; padding: 30px;
+  text-align: center; max-width: 380px; width: 92%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.minigame-card h3 { font-size: 1.1em; color: #6366f1; margin-bottom: 6px; }
+.minigame-card .mg-desc { font-size: 0.8em; color: #6b7280; margin-bottom: 16px; }
+.mg-bar-wrap {
+  height: 36px; background: #e5e7eb; border-radius: 18px;
+  position: relative; overflow: hidden; margin: 10px 0;
+}
+.mg-zone {
+  position: absolute; top:0; height:100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 18px;
+}
+.mg-marker {
+  position: absolute; top:-2px;
+  width: 8px; height: 40px;
+  background: #6366f1; border-radius: 4px;
+  box-shadow: 0 0 12px rgba(99,102,241,0.5);
+}
+.mg-btn {
+  margin-top: 12px; padding: 10px 32px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 0.9em; font-weight: 700; cursor: pointer;
+}
+.mg-btn:hover { transform: scale(1.03); }
+.mg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mg-result { font-size: 1.2em; font-weight: 800; margin-top: 8px; }
+
+/* Modals */
+.modal-bg {
+  position: fixed; inset:0; z-index:100;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  animation: fadeIn .2s;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal-card {
+  background: #fff; border-radius: 24px; padding: 28px;
+  max-width: 440px; width: 92%; text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+  animation: popIn .35s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-card h3 { color: #6366f1; font-size: 1em; margin-bottom: 6px; }
+.modal-card .ev-icon { font-size: 3em; margin-bottom: 6px; }
+.modal-card .ev-text { color: #4b5563; font-size: .84em; line-height: 1.7; margin: 8px 0; }
+.modal-card .ev-effects { font-size: .72em; color: #6b7280; margin: 6px 0; }
+.modal-card button {
+  margin-top: 12px; padding: 10px 28px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: .85em; font-weight: 700; cursor: pointer;
+}
+.modal-card button:hover { opacity: 0.9; transform: scale(1.02); }
+
+.grade-badge { font-size: 3em; font-weight: 900; margin: 8px 0; }
+.sss-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899, #8b5cf6);
+  background-size: 300% 300%;
+  animation: sssShine 1.5s ease-in-out infinite;
+  color: #fff; padding: 10px 28px; border-radius: 16px;
+  font-size: 1em; font-weight: 900; margin: 10px 0;
+}
+@keyframes sssShine {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.summary-stats { display:flex; justify-content:center; gap:14px; margin:12px 0; flex-wrap:wrap; }
+.summary-stats .ss { text-align:center; font-size:.74em; color:#6b7280; }
+.summary-stats .ss .sv { font-size:1.2em; font-weight:800; }
+
+.weekly-section { text-align:left; margin:10px 0; padding:10px; background:#faf5ff; border-radius:12px; }
+.weekly-section h4 { color:#7c3aed; font-size:.8em; margin-bottom:4px; }
+.weekly-section div { font-size:.72em; color:#6b7280; line-height:1.6; }
+
+.footer {
+  padding: 8px 18px; border-top: 1px solid rgba(99,102,241,0.08);
+  display:flex; justify-content:space-between;
+  font-size:.68em; color:#9ca3af;
+}
+.footer a { color:#6366f1; cursor:pointer; }
+.footer a:hover { text-decoration:underline; }
+.footer .sound-toggle { cursor:pointer; user-select:none; }
+</style>
+</head>
+<body>
+
+<div class="game" id="game">
+  <div class="header">
+    <h1>🎮 周哥的一天</h1>
+    <div class="meta">
+      <span class="weather-badge" id="weatherBadge">☀️ 晴天</span>
+      第 <span id="dayNum">1</span> 天 · <span id="scoreNum">0</span> 分
+    </div>
+  </div>
+
+  <div class="scene scene-home" id="sceneArea">
+    <div class="scene-anim" id="sceneAnim"><span class="anim-text"></span></div>
+    <div class="char-box">
+      <canvas id="charCanvas" width="120" height="140"></canvas>
+      <div class="pet" id="petEl" style="display:none">🐱</div>
+      <div class="char-name" id="charName">周照宗</div>
+      <div class="achievement-row" id="achRow"></div>
+    </div>
+    <div class="info-card">
+      <div class="time-chip" id="timeChip">🌅 06:00</div>
+      <div class="loc-title" id="locTitle">🏠 家里</div>
+      <div class="loc-sub" id="locSub">新的一天，阳光透过窗帘洒进来，周哥缓缓睁开眼睛。</div>
+      <div class="weather-note" id="weatherNote"></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat s-energy"><div class="icon">⚡</div><div class="val" id="vEnergy">80</div><div class="bar-wrap"><div class="bar-fill" id="bEnergy" style="width:80%"></div></div></div>
+    <div class="stat s-mood"><div class="icon">😊</div><div class="val" id="vMood">70</div><div class="bar-wrap"><div class="bar-fill" id="bMood" style="width:70%"></div></div></div>
+    <div class="stat s-work"><div class="icon">📋</div><div class="val" id="vWork">40</div><div class="bar-wrap"><div class="bar-fill" id="bWork" style="width:40%"></div></div></div>
+    <div class="stat s-social"><div class="icon">👥</div><div class="val" id="vSocial">50</div><div class="bar-wrap"><div class="bar-fill" id="bSocial" style="width:50%"></div></div></div>
+    <div class="stat s-luck"><div class="icon">🍀</div><div class="val" id="vLuck">50</div><div class="bar-wrap"><div class="bar-fill" id="bLuck" style="width:50%"></div></div></div>
+  </div>
+
+  <div class="choices" id="choicesArea"></div>
+
+  <div class="footer">
+    <span>♋ 巨蟹座 · 🎣 路亚 · 🎮 陪玩店 · 🥃 泥煤威士忌</span>
+    <span><span class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊 音效</span> · <a onclick="showLog()">📜 记录</a></span>
+  </div>
+</div>
+
+<script>
+// ==================== GAME ENGINE ====================
+const G = {
+  energy:80, mood:70, work:40, social:50, luck:50,
+  timeIdx:0, day:1, score:0, logs:[], scene:'home',
+  weather:'sunny',
+  hasCat:false, catMood:0,
+  achievements:{},
+  dailyStats:[],
+  soundOn:true,
+  // New systems
+  fortune:null, // {name,icon,desc,bonus}
+  challenge:null, // {id,desc,target,progress,reward}
+  challengeDone:false,
+  storyLine:0, // 0-5 threshold for story events
+  streak:{fishing:0,cook:0,gym:0,bar:0,gaming:0}, // consecutive day streaks
+};
+
+// Weather system
+const WEATHERS = {
+  sunny: { icon:'☀️', name:'晴天', desc:'阳光明媚，适合出门', fishBonus:5, farmBonus:3, moodBonus:3 },
+  cloudy: { icon:'⛅', name:'多云', desc:'天气舒适，不冷不热', fishBonus:0, farmBonus:0, moodBonus:0 },
+  rainy: { icon:'🌧', name:'雨天', desc:'下雨天适合宅着', fishBonus:-10, farmBonus:-5, moodBonus:0, cookBonus:8 },
+  windy: { icon:'💨', name:'大风', desc:'风大不适合路亚', fishBonus:-15, farmBonus:0, moodBonus:-3, gymBonus:5 },
+};
+
+function rollWeather() {
+  const r = Math.random();
+  G.weather = r < 0.4 ? 'sunny' : r < 0.65 ? 'cloudy' : r < 0.85 ? 'rainy' : 'windy';
+}
+
+// === FORTUNE SYSTEM ===
+const FORTUNES = [
+  { name:'大吉', icon:'🔮', desc:'诸事顺遂，好运爆棚', bonus:{luck:10, mood:8, social:5} },
+  { name:'吉', icon:'✨', desc:'运势不错，适合出门', bonus:{luck:5, mood:5} },
+  { name:'中吉', icon:'🌟', desc:'平平淡淡，稳中有进', bonus:{luck:2, work:3} },
+  { name:'小吉', icon:'🍀', desc:'偶有小确幸', bonus:{luck:3, mood:3} },
+  { name:'末吉', icon:'🌤', desc:'先难后易，坚持住', bonus:{work:5, energy:-3} },
+  { name:'凶', icon:'💫', desc:'诸事小心，宜宅家', bonus:{luck:-5, mood:-3, social:-3} },
+];
+function rollFortune() {
+  const r = Math.random();
+  G.fortune = FORTUNES[r < 0.2 ? 0 : r < 0.4 ? 1 : r < 0.6 ? 2 : r < 0.75 ? 3 : r < 0.9 ? 4 : 5];
+  // Apply fortune bonuses
+  const b = G.fortune.bonus;
+  if (b.luck) G.luck = cl(G.luck+b.luck);
+  if (b.mood) G.mood = cl(G.mood+b.mood);
+  if (b.social) G.social = cl(G.social+b.social);
+  if (b.work) G.work = cl(G.work+b.work);
+  if (b.energy) G.energy = cl(G.energy+b.energy);
+}
+
+// === DAILY CHALLENGE ===
+const CHALLENGES = [
+  { id:'fish3', desc:'今天钓3次鱼', get target(){return 3}, get progress(){return G.logs.filter(l=>l.scene==='fishing').length}, reward:25, icon:'🎣' },
+  { id:'cook2', desc:'今天做2顿饭', get target(){return 2}, get progress(){return G.logs.filter(l=>l.action.includes('做饭')||l.action.includes('做顿')||l.action.includes('在家做饭')).length}, reward:20, icon:'🍳' },
+  { id:'drink2', desc:'喝2杯威士忌/酒', get target(){return 2}, get progress(){return G.logs.filter(l=>l.scene==='bar'||l.scene==='mybar').length}, reward:20, icon:'🥃' },
+  { id:'social3', desc:'社交互动3次', get target(){return 3}, get progress(){return G.logs.filter(l=>l.s>=10).length}, reward:20, icon:'👥' },
+  { id:'gym1', desc:'去1次健身房', get target(){return 1}, get progress(){return G.logs.filter(l=>l.scene==='gym').length}, reward:15, icon:'🏋️' },
+  { id:'farm2', desc:'去农场2次', get target(){return 2}, get progress(){return G.logs.filter(l=>l.scene==='farm').length}, reward:20, icon:'🌾' },
+  { id:'game2', desc:'陪玩店待2次', get target(){return 2}, get progress(){return G.logs.filter(l=>l.scene==='gaming').length}, reward:20, icon:'🎮' },
+];
+function rollChallenge() {
+  G.challenge = CHALLENGES[Math.floor(Math.random()*CHALLENGES.length)];
+  G.challengeDone = false;
+}
+function checkChallenge() {
+  if (!G.challenge || G.challengeDone) return;
+  if (G.challenge.progress >= G.challenge.target) {
+    G.challengeDone = true;
+    G.score += G.challenge.reward;
+    return true;
+  }
+  return false;
+}
+
+// === STORY LINE ===
+const STORY_EVENTS = [
+  { at:0, icon:'💭', title:'心动的开始', desc:'你偶尔会想起那个女孩。她笑起来的样子，让人移不开眼。故事才刚开始。' },
+  { at:1, icon:'💬', title:'第一次对话', desc:'你们终于聊了几句。虽然只是普通的寒暄，但你回去后翻看了好几遍聊天记录。' },
+  { at:2, icon:'💝', title:'她开始注意到你', desc:'她主动在你的朋友圈下留了言。你知道这意味着什么——至少，她不讨厌你。' },
+  { at:3, icon:'📸', title:'默契的瞬间', desc:'你们越来越多的互动，有时候一个眼神就能懂对方在想什么。朋友们都说你们很配。' },
+  { at:4, icon:'💌', title:'心照不宣', desc:'你感觉有些事情就要发生了。巨蟹座的直觉告诉你——再主动一点点，可能就成了。' },
+];
+function checkStoryLine() {
+  // Story progresses when you get love-related random events
+  const loveEvents = G.logs.filter(l=>l.msg.includes('她')||l.msg.includes('喜欢')||l.msg.includes('感情')).length;
+  const newLevel = Math.min(4, Math.floor(loveEvents / 2));
+  if (newLevel > G.storyLine) {
+    G.storyLine = newLevel;
+    return STORY_EVENTS[newLevel];
+  }
+  return null;
+}
+
+// === 朋友圈 POSTS ===
+const MOMENTS = [
+  { trigger:'fishing', icon:'🎣', text:'今天这鱼获还可以吧？路亚的魅力就在于你永远不知道下一杆是什么鱼 🐟', likes:42, comments:[{name:'钓友老张',text:'在哪钓的？求标点！'},{name:'俱乐部小李',text:'牛啊周哥！下次带上我'}] },
+  { trigger:'cook', icon:'🍳', text:'今日份厨艺展示：自己动手丰衣足食 😋 味道还不错！', likes:38, comments:[{name:'妈妈',text:'儿子会做饭了，真棒👍'},{name:'隔壁老王',text:'香味飘到我家了！'}] },
+  { trigger:'gym', icon:'💪', text:'练完胳膊都抬不起来了...但是爽！坚持就是胜利 🏋️', likes:28, comments:[{name:'健身教练',text:'今天的强度可以！继续保持'}] },
+  { trigger:'bar', icon:'🍺', text:'一杯敬自由，一杯敬月光。今晚的BGM很对味 🎵', likes:35, comments:[{name:'大学室友',text:'又喝！'},{name:'调酒师小陈',text:'周哥下次给你调个新的'}] },
+  { trigger:'farm', icon:'🌾', text:'逃离城市的一天。农场的小羊太可爱了，差点抱一只回家 🐑', likes:45, comments:[{name:'农场老刘',text:'随时欢迎！'}] },
+  { trigger:'gaming', icon:'🎮', text:'今晚手感爆棚，五杀截图镇楼！陪玩店的兄弟们太给力了 🔥', likes:55, comments:[{name:'店长阿杰',text:'周哥永远的神'},{name:'路人甲',text:'大佬求带！'}] },
+];
+function showMoment(trigger) {
+  const m = MOMENTS.find(m=>m.trigger===trigger);
+  if (!m) return;
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal-card" style="text-align:left">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-size:2em">👤</span>
+      <div><div style="font-weight:800;color:#1e1b4b">周照宗</div><div style="font-size:.65em;color:#9ca3af">刚刚</div></div>
+    </div>
+    <div style="font-size:.9em;color:#1e293b;line-height:1.6;margin-bottom:10px">${m.text}</div>
+    <div style="display:flex;justify-content:space-between;color:#9ca3af;font-size:.7em;padding:8px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9">
+      <span>❤️ ${m.likes} 赞</span><span>💬 ${m.comments.length} 评论</span>
+    </div>
+    ${m.comments.map(c=>`<div style="padding:6px 0;font-size:.78em"><b style="color:#6366f1">${c.name}</b>：${c.text}</div>`).join('')}
+    <button onclick="this.closest('.modal-bg').remove()" style="margin-top:8px;padding:6px 20px;background:#e5e7eb;border:none;border-radius:8px;cursor:pointer;font-size:.8em">关闭</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+
+// === STREAK TRACKING ===
+const STREAK_CATS = { fishing:'🎣钓鱼', cook:'🍳做饭', gym:'🏋️健身', bar:'🍺喝酒', gaming:'🎮游戏' };
+function updateStreak(loc, action) {
+  const map = { fishing:'fishing', gym:'gym', bar:'bar', mybar:'bar', gaming:'gaming' };
+  const cat = map[loc];
+  if (!cat) { Object.keys(G.streak).forEach(k=>{ if (!map[loc]) G.streak[k]=Math.max(0,G.streak[k]-0.5); }); return; }
+  G.streak[cat] = (G.streak[cat]||0) + 1;
+  Object.keys(G.streak).forEach(k=>{ if (k!==cat) G.streak[k]=Math.max(0,G.streak[k]-0.5); });
+  // Check for 3+ day streak
+  if (G.streak[cat] >= 3 && G.streak[cat] < 3.5) {
+    setTimeout(()=>{
+      const bg = document.createElement('div'); bg.className='modal-bg';
+      bg.innerHTML = `<div class="modal-card"><div class="ev-icon">🔥</div><h3>状态火热！</h3><div class="ev-text">连续${Math.floor(G.streak[cat])}天${STREAK_CATS[cat]}！你是真正的${STREAK_CATS[cat].slice(2)}狂魔！额外+15分</div><button onclick="this.closest('.modal-bg').remove()">🎉 继续</button></div>`;
+      document.body.appendChild(bg);
+      G.score += 15;
+    }, 2000);
+  }
+}
+
+// Scene data
+const SCENES = {
+  home:     { cls:'scene-home', name:'🏠 家里', sub:'温馨的小窝。窗台上摆着几个路亚饵，床头放着一本翻了一半的书。' },
+  office:   { cls:'scene-office', name:'🏢 住建局', sub:'偶尔来单位转转。同事看到你来了还挺惊讶。' },
+  fishing:  { cls:'scene-fishing', name:'🎣 水库边', sub:'路亚竿在手，天下我有。水面平静，偶尔有鱼打花。远处山影朦胧。' },
+  gaming:   { cls:'scene-gaming', name:'🎮 陪玩店', sub:'十余台电脑排开，RGB灯效闪成一片。店里陆续来客了。' },
+  bar:      { cls:'scene-bar', name:'🍺 酒吧', sub:'灯光迷离，音乐刚好。吧台边坐了几个熟面孔，冲你举了举杯。' },
+  mybar:    { cls:'scene-mybar', name:'🥃 我的小酒吧', sub:'周哥自己的小天地。酒柜里一排艾雷岛威士忌，泥煤味的最多。' },
+  farm:     { cls:'scene-farm', name:'🌾 朋友的农场', sub:'鸡鸭鹅满地跑，空气里飘着青草和泥土的味道。远离城市，心都静了。' },
+  gym:      { cls:'scene-gym', name:'🏋️ 健身房', sub:'铁片碰撞声此起彼伏。汗水的气息弥漫在空气中。今天练哪个部位？' },
+  restaurant:{ cls:'scene-restaurant', name:'🍲 餐厅', sub:'热气腾腾，香味扑鼻。服务员端着菜穿梭在桌间，有人喊"加菜！"' },
+  street:   { cls:'scene-street', name:'🚗 路上', sub:'城市的街道人来人往。风里有夏天的味道。偶尔有车按喇叭。' },
+};
+
+const SLOTS = [
+  { t:'06:00', e:'🌅', k:'dawn' }, { t:'08:00', e:'☀️', k:'morning' },
+  { t:'10:30', e:'🌤', k:'late_morning' }, { t:'13:00', e:'🌞', k:'afternoon' },
+  { t:'15:30', e:'🌿', k:'late_afternoon' }, { t:'18:00', e:'🌆', k:'evening' },
+  { t:'20:30', e:'🌙', k:'night' }, { t:'23:00', e:'🌃', k:'late_night' },
+];
+
+const ACTS = {
+  dawn: [
+    { t:'再睡一会儿', i:'🛌', e:15, m:0, w:-5, s:0, l:0, loc:'home', msg:'被窝是天堂在人间的分店，多待十分钟都是赚。' },
+    { t:'早起出门跑个步', i:'🏃', e:-10, m:10, w:5, s:0, l:5, loc:'street', msg:'晨跑路上没人，空气凉凉的，阳光从树叶间洒下来。今天起得值了。' },
+    { t:'泡杯咖啡阳台发呆', i:'☕', e:5, m:8, w:0, s:0, l:8, loc:'home', msg:'捧着热咖啡看窗外，早起城市有种安静的温柔。偶尔有几辆车驶过。' },
+    { t:'躺着刷会儿手机', i:'📱', e:5, m:5, w:0, s:5, l:0, loc:'home', msg:'刷到几条有趣的，又看了几个路亚视频，手又痒了。' },
+  ],
+  morning: [
+    { t:'带上路亚竿去钓鱼', i:'🎣', e:-5, m:18, w:-10, s:0, l:15, loc:'fishing', msg:'甩了十几竿，突然一个顿口！一条漂亮的鲈鱼出水。今天渔获不错。', game:'fishing' },
+    { t:'去陪玩店开门', i:'🎮', e:0, m:8, w:-5, s:10, l:5, loc:'gaming', msg:'到店里把电脑一台台开起来，泡了杯茶，等着今天来玩的客人。' },
+    { t:'去朋友的农场转转', i:'🌾', e:-5, m:14, w:0, s:8, l:10, loc:'farm', msg:'农场空气真好。朋友新养了几只小羊，追着你跑可爱得不行。顺手摘了点菜。' },
+    { t:'睡到自然醒再说', i:'😴', e:15, m:5, w:-10, s:-5, l:0, loc:'home', msg:'睡到快十点才爬起来，反正今天也没啥必须早起的事。这才是生活。' },
+  ],
+  late_morning: [
+    { t:'换个标点继续路亚', i:'🎣', e:-5, m:15, w:-5, s:0, l:12, loc:'fishing', msg:'换了个树荫下位置又中了！今天鱼口真不错，旁边钓友投来羡慕的目光。', game:'fishing' },
+    { t:'在陪玩店打几把排位', i:'🎯', e:-5, m:12, w:-10, s:8, l:5, loc:'gaming', msg:'手感火热连赢三把，店里小弟们都围过来看了。今天状态拉满。' },
+    { t:'在农场帮忙喂动物', i:'🐑', e:-5, m:16, w:0, s:5, l:10, loc:'farm', msg:'喂鸡放羊给菜地浇水，干完活坐在田埂上吹风。有一种回到小时候的感觉。' },
+    { t:'找朋友喝咖啡聊人生', i:'☕', e:5, m:10, w:0, s:12, l:8, loc:'street', msg:'聊到感情上的事，朋友给了不少建议。巨蟹座就是容易想太多，放轻松点。' },
+  ],
+  afternoon: [
+    { t:'找家小馆子吃午饭', i:'🍜', e:15, m:8, w:0, s:5, l:3, loc:'restaurant', msg:'老板认识你多加了份小菜。"周哥好久没来了！"吃着饭跟老板聊了几句家常。' },
+    { t:'在家做饭吃', i:'🍳', e:10, m:12, w:0, s:0, l:8, loc:'home', msg:'打开冰箱看了看，随手炒了两个菜。自己做的饭吃着就是踏实。' },
+    { t:'回家睡个午觉', i:'😴', e:20, m:5, w:-5, s:-5, l:0, loc:'home', msg:'拉窗帘空调26度，一觉睡到自然醒。巨蟹座最懂享受，午觉是人生一大乐事。' },
+    { t:'午后窗口期去路亚', i:'🎣', e:-5, m:14, w:-5, s:-5, l:18, loc:'fishing', msg:'下午窗口期到了！水面开始有炸水，赶紧甩竿。连着好几口中鱼，太爽了。', game:'fishing' },
+    { t:'去健身房撸铁', i:'🏋️', e:-15, m:8, w:5, s:0, l:5, loc:'gym', msg:'推完最后一组卧推手臂酸得抬不起来，但这种酸爽让人上瘾。' },
+  ],
+  late_afternoon: [
+    { t:'陪玩店来客人了', i:'🎮', e:-5, m:14, w:-5, s:15, l:8, loc:'gaming', msg:'来了一群老客户组队开黑，店里气氛瞬间热闹起来。这才是陪玩店该有的样子。' },
+    { t:'开车去郊外兜风', i:'🚗', e:-5, m:15, w:0, s:0, l:12, loc:'street', msg:'摇下车窗放着喜欢的歌，沿着河边一路开到郊外。风吹在脸上，自由的感觉。' },
+    { t:'逛逛渔具店', i:'🎣', e:0, m:10, w:0, s:0, l:12, loc:'street', msg:'看到新到的几个路亚饵颜色真漂亮，手感也好。忍不住又买了好几个。' },
+    { t:'去小酒吧整理酒柜', i:'🥃', e:0, m:10, w:0, s:0, l:10, loc:'mybar', msg:'擦擦酒瓶整理杯具。新开了一瓶艾雷岛的泥煤威士忌，海藻和烟熏味扑面而来。' },
+  ],
+  evening: [
+    { t:'约兄弟们涮火锅', i:'🍲', e:15, m:15, w:0, s:15, l:5, loc:'restaurant', msg:'一桌人热热闹闹，毛肚七上八下，啤酒开了好几瓶。笑声和热气混在一起，这就是生活。' },
+    { t:'在家做顿大餐', i:'🍳', e:5, m:16, w:0, s:5, l:12, loc:'home', msg:'系上围裙打开冰箱，今晚做的是拿手菜。厨房里飘出的香味把邻居都招来了。' },
+    { t:'在自己小酒吧喝威士忌', i:'🥃', e:-5, m:18, w:0, s:8, l:10, loc:'mybar', msg:'倒了杯泥煤味艾雷岛单一麦芽。闻香、小口啜饮。烟熏在口腔散开，一天的疲惫都化了。' },
+    { t:'去常去的酒吧喝两杯', i:'🍺', e:-5, m:16, w:0, s:12, l:10, loc:'bar', msg:'调酒师看到你就开始调你常喝的那杯。今晚店里放的歌很对味。' },
+    { t:'夜钓试试运气', i:'🎣', e:-10, m:8, w:0, s:-5, l:16, loc:'fishing', msg:'夜钓别有乐趣。水面映着月光，安静得只听见虫鸣。偶尔一个炸水打破宁静。', game:'fishing' },
+  ],
+  night: [
+    { t:'在小酒吧招待朋友', i:'🥃', e:-5, m:20, w:0, s:15, l:8, loc:'mybar', msg:'几个好朋友来你的小酒吧，拿出珍藏泥煤威士忌品鉴。一群人边喝边聊笑声不断。' },
+    { t:'换个地方继续喝', i:'🍺', e:-10, m:15, w:0, s:10, l:8, loc:'bar', msg:'朋友又约了第二场盛情难却。今晚注定是个有故事的夜晚。' },
+    { t:'去唱K', i:'🎤', e:-5, m:18, w:0, s:12, l:5, loc:'bar', msg:'点了首老歌一开口全场安静三秒然后鼓掌。周哥的保留曲目名不虚传。' },
+    { t:'跟兄弟开黑到半夜', i:'🎮', e:-15, m:20, w:0, s:15, l:5, loc:'gaming', msg:'"最后一把！"——今晚第三次说这句话了。谁也别想走，决战到天亮。' },
+  ],
+  late_night: [
+    { t:'回家洗洗睡觉', i:'😴', e:25, m:0, w:0, s:-5, l:0, loc:'home', msg:'洗了热水澡倒在床上。周哥的一天圆满结束。晚安，明天见。' },
+    { t:'喝完酒去吃个夜宵', i:'🍜', e:10, m:10, w:0, s:5, l:3, loc:'restaurant', msg:'深夜路边摊一碗热汤下肚，这个夜晚才算完整。老板认识你多给了个卤蛋。' },
+    { t:'微醺中想想喜欢的女孩', i:'🤔', e:0, m:8, w:0, s:0, l:5, loc:'home', msg:'酒意微醺脑子里突然冒出她的样子。巨蟹座就是这样，越安静的时候越容易想念。' },
+    { t:'戴着耳机听歌发呆', i:'🎵', e:5, m:8, w:0, s:-5, l:10, loc:'home', msg:'深夜的歌最有感觉。有些事只能在夜里一个人慢慢消化。窗外的月光很亮。' },
+  ],
+};
+
+const RANDOM_EVENTS = [
+  { icon:'🐟', title:'大鱼咬钩！', desc:'路亚竿猛地一弯线杯疯狂出线！十几分钟后一条巨物浮出水面。拍照发朋友圈评论区直接炸了——"周哥牛啊！"', e:0, m:25, w:0, s:18, l:20, cat:'fishing' },
+  { icon:'💬', title:'她发来了消息', desc:'手机亮了——是她。盯着屏幕看了好几秒才点开，聊了几句心跳加速。她主动发的！今晚怕是要失眠了。', e:5, m:22, w:0, s:12, l:5, cat:'love' },
+  { icon:'💝', title:'她点赞了你的朋友圈', desc:'你发的那条钓鱼朋友圈她不仅点了赞还评论了一句。你盯着那句评论看了整整五分钟。巨蟹座心动就是这个样子。', e:0, m:18, w:0, s:8, l:10, cat:'love' },
+  { icon:'🍅', title:'西红柿鸡蛋面大成功', desc:'今天面煮得刚好，鸡蛋嫩滑，番茄酸甜完全融进汤里。连吃两碗还意犹未尽。周哥厨艺又进步了。', e:10, m:15, w:0, s:5, l:8, cat:'cook' },
+  { icon:'🥩', title:'土豆炖牛腩绝了', desc:'小火炖了两个多小时牛肉软烂入味，土豆吸饱汤汁。端上桌香气直接把邻居引来了——"周哥你又做好吃的了？"', e:12, m:18, w:0, s:8, l:10, cat:'cook' },
+  { icon:'🐟', title:'金毛狮子鱼炸得漂亮', desc:'刀工精准火候到位，炸出来形如狮子外酥里嫩。这道是周哥压轴绝活，朋友说堪比饭店水准。', e:8, m:20, w:0, s:10, l:15, cat:'cook' },
+  { icon:'🌶️', title:'辣椒炒肉征服全场', desc:'大火爆炒辣椒焦香和肉片嫩滑完美融合。朋友吃了说"就这个味太正了，比饭店的还好吃。"', e:8, m:16, w:0, s:8, l:10, cat:'cook' },
+  { icon:'🐂', title:'小炒黄牛肉拿捏了', desc:'牛肉切得薄而均匀猛火快炒锁住水分，又嫩又辣。这道菜一上桌就光盘。周哥厨艺封神了。', e:8, m:18, w:0, s:10, l:12, cat:'cook' },
+  { icon:'🎁', title:'陪玩店来了大单', desc:'一个公司团建包场十几个人玩了一整个下午。结账时老板多甩了五百红包，说下次还来包场。', e:0, m:18, w:0, s:22, l:18, cat:'gaming' },
+  { icon:'🤝', title:'电竞俱乐部经理来访', desc:'职业电竞俱乐部经理来店里体验，对环境赞不绝口，说考虑带队员来定期训练。这可是大事。', e:0, m:10, w:0, s:15, l:8, cat:'gaming' },
+  { icon:'🏆', title:'店里举办小型比赛', desc:'临时组织一场店赛来了二十多人报名。气氛火爆冠军抱走一箱能量饮料和你的签名照。', e:-5, m:15, w:0, s:18, l:10, cat:'gaming' },
+  { icon:'🥃', title:'朋友送了瓶好酒', desc:'老朋友从国外带回来一瓶限量版泥煤威士忌特意送到酒吧。"这瓶只有你懂怎么喝，别浪费了。"', e:0, m:15, w:0, s:10, l:12, cat:'whisky' },
+  { icon:'🎯', title:'酒吧偶遇老朋友', desc:'吧台边碰到好久不见的老同学。两杯威士忌下肚聊起当年糗事，笑得肚子疼。约了下周再聚。', e:0, m:15, w:0, s:15, l:5, cat:'bar' },
+  { icon:'🍸', title:'调酒师请你尝新品', desc:'调酒师新创了一款鸡尾酒让你第一个尝。"还没名字周哥你给起一个？"你品了一口——不错。', e:0, m:10, w:0, s:8, l:8, cat:'bar' },
+  { icon:'🌾', title:'农场大丰收', desc:'朋友打电话说农场菜熟了让你去拿。到了发现满满一后备箱的蔬果，根本吃不完分了好多给邻居和店里小弟。', e:5, m:12, w:0, s:8, l:15, cat:'farm' },
+  { icon:'🐑', title:'小羊羔出生了', desc:'农场母羊生了两只小羊羔！白绒绒的走路还站不稳。你抱了一下心都化了，给它俩起了名字：阿大和阿二。', e:0, m:18, w:0, s:5, l:10, cat:'farm' },
+  { icon:'🐔', title:'捡到双黄蛋', desc:'在鸡窝里摸到了两个双黄蛋！朋友说今天运气肯定好。果然下午好事连连。这运气没谁了。', e:0, m:8, w:0, s:0, l:15, cat:'farm' },
+  { icon:'💡', title:'脑子里闪过好想法', desc:'一个绝妙的点子突然蹦出来赶紧记在手机上。说不定以后能派上大用场。巨蟹座的直觉总是很准。', e:0, m:10, w:12, s:0, l:10, cat:'life' },
+  { icon:'🍜', title:'常去的店老板免单', desc:'老板说今天高兴给你免了单。"周哥是熟客了这顿算我的。"人间自有真情在，这样的老板值得常来。', e:5, m:15, w:0, s:5, l:15, cat:'life' },
+  { icon:'🐱', title:'小区橘猫来找你了', desc:'楼下那只橘猫又蹲在你家门口，喂了根火腿肠它就赖着不走在你脚边蹭来蹭去。这只猫跟你有缘。', e:0, m:12, w:0, s:0, l:10, cat:'cat' },
+  { icon:'📦', title:'快递到了', desc:'之前买的渔具和游戏外设同时到了。拆快递的快乐谁懂啊一口气拆了三个包裹，像过圣诞节。', e:0, m:10, w:0, s:0, l:8, cat:'life' },
+  { icon:'☀️', title:'天气突然放晴', desc:'本来阴沉沉的天突然晴了，阳光普照。心情莫名其妙就好了起来。这种天不出门是犯罪。', e:5, m:12, w:0, s:0, l:10, cat:'weather' },
+];
+
+// Achievements
+const ACHIEVEMENTS = {
+  fish5: { name:'路亚达人', icon:'🎣', cond:'钓鱼5次', check:()=>G.logs.filter(l=>l.scene==='fishing').length>=5 },
+  cook3: { name:'小厨神', icon:'🍳', cond:'做饭事件触发3次', check:()=>G.logs.filter(l=>['cook'].includes(l.cat)).length>=0 },
+  social10: { name:'社交之王', icon:'👑', cond:'社交≥90', check:()=>G.social>=90 },
+  sss: { name:'天选之人', icon:'⭐', cond:'达成SSS+', check:()=>false },
+  catAdopt: { name:'铲屎官', icon:'🐱', cond:'收养橘猫', check:()=>G.hasCat },
+  whisky3: { name:'威士忌品鉴师', icon:'🥃', cond:'小酒吧喝酒3次', check:()=>G.logs.filter(l=>l.scene==='mybar').length>=3 },
+};
+
+function checkAchievements() {
+  let changed = false;
+  Object.entries(ACHIEVEMENTS).forEach(([k,v]) => {
+    if (!G.achievements[k] && v.check()) { G.achievements[k]=true; changed=true; }
+  });
+  if (changed) renderAchievements();
+}
+function renderAchievements() {
+  document.getElementById('achRow').innerHTML = Object.entries(G.achievements)
+    .filter(([_,v])=>v).map(([k,_])=>
+      `<span class="ach-badge">${ACHIEVEMENTS[k].icon} ${ACHIEVEMENTS[k].name}</span>`).join('');
+}
+
+// ==================== PIXEL CHARACTER ====================
+const canvas = document.getElementById('charCanvas');
+const ctx = canvas.getContext('2d');
+
+function drawChar() {
+  ctx.clearRect(0,0,120,140);
+  const s = 3; // pixel size
+  const set = (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(x,y,w||s,h||s); };
+  const mood = G.mood;
+  const H='#1a0f0a', SK='#fddcc4', MC='#dc2626', GL='#d4a853', SHIRT='#1a1a1a';
+
+  // === 微分碎盖 HAIR ===
+  for (let r=0;r<8;r++) for (let c=2;c<18;c++) set(18+c*s, 2+r*s, s, s, H);
+  // Textured fringe
+  for (let c=2;c<18;c++) { set(18+c*s,22,s,s,H); if(c%3===0) set(18+c*s,18,s,s*2,H); }
+  for (let c=1;c<18;c+=2) set(18+c*s,0,s,s*2,H); // spiky top
+  // Side fade
+  set(14,18,s*2,s*10,H); set(72,18,s*2,s*10,H);
+  set(16,16,s*2,s*5,H); set(70,16,s*2,s*5,H);
+
+  // === FACE ===
+  for (let r=0;r<12;r++) for (let c=2;c<18;c++) set(18+c*s, 24+r*s, s, s, SK);
+
+  // === GOLD GLASSES ===
+  // Bridge
+  set(34,44,s*8,s,GL);
+  // Left lens
+  set(28,40,s*9,s*7,'rgba(212,168,83,0.08)');
+  set(28,40,s*9,s,GL); set(28,46,s*9,s,GL);
+  set(28,40,s,s*7,GL); set(36,40,s,s*7,GL);
+  // Right lens
+  set(48,40,s*9,s*7,'rgba(212,168,83,0.08)');
+  set(48,40,s*9,s,GL); set(48,46,s*9,s,GL);
+  set(48,40,s,s*7,GL); set(56,40,s,s*7,GL);
+  // Temple
+  set(24,42,s*3,s*1.5,GL); set(60,42,s*3,s*1.5,GL);
+
+  // === EYES (behind glasses) ===
+  const eo = mood>=75?5:mood<=25?3:4;
+  set(30,42,s*5,eo,'#fff'); set(50,42,s*5,eo,'#fff');
+  set(34,41,s*3,s*3,'#111'); set(54,41,s*3,s*3,'#111');
+  set(37,40,s*1.5,s*1.5,'#fff'); set(57,40,s*1.5,s*1.5,'#fff');
+  if (eo>=4) { set(42,38,s,s,'#fff'); set(62,38,s,s,'#fff'); }
+
+  // === EYEBROWS ===
+  const by = mood>=75?34:mood<=25?36:35;
+  set(30,by,s*5,s*1.5,H); set(50,by,s*5,s*1.5,H);
+
+  // === BLUSH ===
+  const ba = mood>=80?0.5:mood>=50?0.3:0.12;
+  set(26,52,s*5,s*4,`rgba(255,140,140,${ba})`);
+  set(54,52,s*5,s*4,`rgba(255,140,140,${ba})`);
+
+  // === MOUTH ===
+  const my = mood>=75?70:mood<=25?76:72;
+  if (mood>=75) { set(40,my,s*6,s*2,MC); set(42,my-4,s*4,s*4,MC); }
+  else if (mood<=25) { set(44,my+4,s*3,s*2,MC); }
+  else { set(44,my,s*3,s*2,MC); }
+
+  // === NOSE ===
+  set(46,66,s*2,s*1.5,'rgba(0,0,0,0.06)');
+
+  // === NECKLACE ===
+  set(48,72,s*6,s*1.5,GL);
+  set(51,73,s*1.5,s*3,GL);
+
+  // === BLACK T-SHIRT ===
+  for (let r=0;r<10;r++) for (let c=3;c<17;c++) set(18+c*s, 74+r*s, s, s, SHIRT);
+  set(42,74,s*8,s*2,'#222');
+
+  // === ARMS ===
+  for (let r=0;r<6;r++) { set(14,76+r*s,s*3,s,SK); set(72,76+r*s,s*3,s,SK); }
+
+  // === GLASSES SHINE ===
+  if (mood>=70) set(30,42,s*2,s*2,'rgba(255,255,255,0.25)');
+
+  // Name with expression
+  document.getElementById('charName').textContent =
+    '周照宗 ' + (mood>=80?'(◕‿◕)':mood>=50?'(•‿•)':mood>=25?'(•_•)':'(╥_╥)');
+}
+
+// ==================== UI ====================
+function setScene(loc, animate=true) {
+  G.scene = loc;
+  const area = document.getElementById('sceneArea');
+  area.className = 'scene ' + SCENES[loc].cls + (animate?' scene-enter':'');
+  if (animate) setTimeout(()=>area.classList.remove('scene-enter'), 500);
+  document.getElementById('locTitle').textContent = SCENES[loc].name;
+  document.getElementById('locSub').textContent = SCENES[loc].sub;
+  const w = WEATHERS[G.weather];
+  document.getElementById('weatherNote').textContent = w.icon+' '+w.name+' · '+w.desc;
+  drawChar();
+  if (G.hasCat && (loc==='home'||loc==='farm')) {
+    document.getElementById('petEl').style.display='block';
+  } else {
+    document.getElementById('petEl').style.display='none';
+  }
+}
+
+function updStats() {
+  ['Energy','Mood','Work','Social','Luck'].forEach(k => {
+    const v = G[k.toLowerCase()];
+    document.getElementById('v'+k).textContent = v;
+    document.getElementById('b'+k).style.width = v+'%';
+  });
+  document.getElementById('dayNum').textContent = G.day;
+  document.getElementById('scoreNum').textContent = G.score;
+  document.getElementById('weatherBadge').textContent = WEATHERS[G.weather].icon+' '+WEATHERS[G.weather].name;
+}
+
+const cl = v => Math.min(100,Math.max(0,v));
+function apply(a) {
+  G.energy=cl(G.energy+a.e); G.mood=cl(G.mood+a.m);
+  G.work=cl(G.work+a.w); G.social=cl(G.social+a.s);
+  G.luck=cl(G.luck+a.l);
+  // Apply weather bonus
+  const w = WEATHERS[G.weather];
+  if (a.loc==='fishing') { G.luck=cl(G.luck+w.fishBonus); if (w.fishBonus<0) G.mood=cl(G.mood-3); }
+  if (a.loc==='farm') { G.mood=cl(G.mood+w.farmBonus); }
+  if (a.loc==='home' && a.i==='🍳') G.luck=cl(G.luck+(w.cookBonus||0));
+  if (a.loc==='gym' && w.gymBonus) G.energy=cl(G.energy+w.gymBonus);
+}
+
+// ==================== SCENE ANIMATION ====================
+function sceneAnim(emoji) {
+  const el = document.getElementById('sceneAnim');
+  el.querySelector('.anim-text').textContent = emoji;
+  el.classList.add('active');
+  setTimeout(()=>el.classList.remove('active'), 1000);
+}
+
+// ==================== FISHING MINI-GAME ====================
+function fishingGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  let markerPos = 0, direction = 1, speed = 2 + Math.random()*3;
+  const zoneStart = 45 + Math.random()*25;
+  const zoneWidth = 15 + Math.random()*15;
+  let clicked = false, success = false;
+
+  bg.innerHTML = `<div class="minigame-card">
+    <h3>🎣 路亚中鱼！</h3>
+    <div class="mg-desc">在绿色区域点击鼠标收线！</div>
+    <div class="mg-bar-wrap" id="mgBar" style="position:relative">
+      <div class="mg-zone" style="left:${zoneStart}%;width:${zoneWidth}%"></div>
+      <div class="mg-marker" id="mgMarker" style="left:0%"></div>
+    </div>
+    <button class="mg-btn" id="mgBtn" onclick="clickFish()">🎯 收线！</button>
+    <div class="mg-result" id="mgResult"></div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let animId;
+  function animate() {
+    if (clicked) return;
+    markerPos += direction * speed;
+    if (markerPos >= 95) { direction = -1; markerPos=95; }
+    if (markerPos <= 0) { direction = 1; markerPos=0; }
+    const m = document.getElementById('mgMarker');
+    if (m) m.style.left = markerPos+'%';
+    animId = requestAnimationFrame(animate);
+  }
+  animate();
+
+  window.clickFish = function() {
+    if (clicked) return;
+    clicked = true;
+    cancelAnimationFrame(animId);
+    success = markerPos >= zoneStart && markerPos <= (zoneStart+zoneWidth);
+    const btn = document.getElementById('mgBtn');
+    if (btn) btn.disabled = true;
+    const res = document.getElementById('mgResult');
+    if (res) {
+      res.textContent = success ? '🎯 完美！大鱼上钩！渔获+1 运气+15' : '💨 鱼跑了...下次看准时机！';
+      res.style.color = success ? '#10b981' : '#ef4444';
+    }
+    if (success) { G.luck = cl(G.luck+15); G.mood = cl(G.mood+8); }
+    else { G.mood = cl(G.mood-3); }
+    updStats();
+    setTimeout(()=>{ bg.remove(); callback(success); }, 1500);
+  };
+}
+
+// ==================== COOKING MINI-GAME ====================
+function cookingGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  const ingredients = ['🍅','🥩','🌶️','🐂','🥚','🧅','🧄','🥕','🐟','🍄'];
+  let targets = [], caught = 0, total = 5, timeLeft = 5;
+  for (let i=0;i<total;i++) targets.push(ingredients[Math.floor(Math.random()*ingredients.length)]);
+
+  bg.innerHTML = `<div class="minigame-card">
+    <h3>🍳 做饭时间！</h3>
+    <div class="mg-desc">快速点击食材！还剩 <span id="cookTime">5</span> 秒</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0;min-height:60px" id="cookArea"></div>
+    <div class="mg-result" id="cookResult">抓到: 0/${total}</div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let timer = setInterval(()=>{
+    timeLeft--;
+    const ct = document.getElementById('cookTime');
+    if (ct) ct.textContent = timeLeft;
+    if (timeLeft<=0) { clearInterval(timer); endCook(); }
+  }, 1000);
+
+  function spawnIngredient() {
+    if (timeLeft<=0) return;
+    const area = document.getElementById('cookArea');
+    if (!area) return;
+    const ing = targets[Math.floor(Math.random()*targets.length)];
+    const el = document.createElement('span');
+    el.textContent = ing; el.style.cssText = 'font-size:2em;cursor:pointer;animation:bounceIn .3s;padding:4px';
+    el.onclick = ()=>{
+      caught++; el.style.opacity='0.3'; el.onclick=null;
+      const cr = document.getElementById('cookResult');
+      if (cr) cr.textContent = '抓到: '+caught+'/'+total;
+    };
+    area.appendChild(el);
+    if (area.children.length>8) area.firstChild.remove();
+    setTimeout(()=>{ if (el.parentNode) { el.remove(); } }, 1500);
+  }
+
+  const spawnInterval = setInterval(spawnIngredient, 600);
+  setTimeout(()=>spawnIngredient(), 100);
+
+  function endCook() {
+    clearInterval(spawnInterval);
+    const success = caught >= total-1;
+    const cr = document.getElementById('cookResult');
+    if (cr) {
+      cr.textContent = success ? '👨‍🍳 完美！厨艺拉满 心情+15' : '😅 手忙脚乱... 心情+5';
+      cr.style.color = success ? '#10b981' : '#f59e0b';
+    }
+    if (success) { G.mood=cl(G.mood+15); G.social=cl(G.social+5); }
+    else { G.mood=cl(G.mood+5); }
+    updStats();
+    setTimeout(()=>{ bg.remove(); callback(success); }, 1500);
+  }
+}
+
+// ==================== GYM MINI-GAME ====================
+function gymGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  let power = 0, clicked = 0;
+  bg.innerHTML = `<div class="minigame-card">
+    <h3>🏋️ 撸铁挑战！</h3>
+    <div class="mg-desc">疯狂点击按钮举铁！</div>
+    <div style="font-size:3em;margin:8px" id="gymEmoji">🏋️</div>
+    <div class="mg-bar-wrap" style="height:20px"><div id="gymBar" style="height:100%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:18px;width:0%;transition:width .1s"></div></div>
+    <button class="mg-btn" id="gymBtn" style="font-size:1.2em;padding:16px 48px">💪 点击举铁！</button>
+    <div style="font-size:.7em;color:#9ca3af;margin-top:6px">点击次数: <span id="gymClicks">0</span></div>
+    <div class="mg-result" id="gymResult"></div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  document.getElementById('gymBtn').onclick = ()=>{
+    clicked++; power = Math.min(100, power+4);
+    document.getElementById('gymBar').style.width = power+'%';
+    document.getElementById('gymClicks').textContent = clicked;
+    const em = document.getElementById('gymEmoji');
+    if (em) em.style.transform = 'scale('+(1+power/100)+')';
+    if (power>=100) {
+      const btn = document.getElementById('gymBtn');
+      if (btn) { btn.disabled=true; btn.textContent='🏆 完成！'; }
+      document.getElementById('gymResult').textContent = '💪 力竭了！但超爽！精力+10 心情+8';
+      document.getElementById('gymResult').style.color = '#10b981';
+      G.energy=cl(G.energy+10); G.mood=cl(G.mood+8); G.work=cl(G.work+5);
+      updStats();
+      setTimeout(()=>{ bg.remove(); callback(true); }, 1500);
+    }
+  };
+  // Auto-fail after 6 seconds
+  setTimeout(()=>{
+    if (power<100) {
+      document.getElementById('gymBtn').disabled = true;
+      document.getElementById('gymResult').textContent = '还行，下次再努力！精力+5';
+      document.getElementById('gymResult').style.color = '#f59e0b';
+      G.energy=cl(G.energy+5);
+      updStats();
+      setTimeout(()=>{ bg.remove(); callback(false); }, 1500);
+    }
+  }, 6000);
+}
+
+// ==================== BAR MINI-GAME ====================
+function barGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  let glassFilled = 0, pouring = false;
+  bg.innerHTML = `<div class="minigame-card">
+    <h3>🍺 倒酒挑战</h3>
+    <div class="mg-desc">按住按钮倒酒，松手停止——别溢出来！</div>
+    <div style="font-size:2em;margin:10px">🥃</div>
+    <div class="mg-bar-wrap" style="height:24px"><div id="beerBar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);border-radius:18px;width:0%"></div></div>
+    <div style="font-size:.7em;color:#9ca3af;margin:4px">目标: 80%-95%</div>
+    <button class="mg-btn" id="pourBtn" style="font-size:1.1em;padding:14px 40px"
+      onmousedown="window.startPour()" onmouseup="window.stopPour()"
+      ontouchstart="window.startPour()" ontouchend="window.stopPour()">🫗 按住倒酒</button>
+    <div class="mg-result" id="pourResult"></div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  let pourTimer;
+  window.startPour = ()=>{
+    pouring=true;
+    pourTimer = setInterval(()=>{
+      glassFilled += 2.5;
+      const bar = document.getElementById('beerBar');
+      if (bar) bar.style.width = glassFilled+'%';
+      if (glassFilled>=100) { clearInterval(pourTimer); endPour(false); }
+    }, 50);
+  };
+  window.stopPour = ()=>{
+    pouring=false; clearInterval(pourTimer);
+    setTimeout(()=>endPour(glassFilled>=75 && glassFilled<=95), 300);
+  };
+
+  function endPour(success) {
+    clearInterval(pourTimer);
+    document.getElementById('pourBtn').disabled = true;
+    const res = document.getElementById('pourResult');
+    if (success) {
+      res.textContent = '🍻 完美！不多不少刚刚好！心情+15';
+      res.style.color = '#10b981';
+      G.mood=cl(G.mood+15); G.social=cl(G.social+8);
+    } else if (glassFilled>=100) {
+      res.textContent = '💦 洒了！酒溢出来了...心情-5';
+      res.style.color = '#ef4444';
+      G.mood=cl(G.mood-5);
+    } else {
+      res.textContent = '🤏 倒太少了，再来一杯？心情+5';
+      res.style.color = '#f59e0b';
+      G.mood=cl(G.mood+5);
+    }
+    updStats();
+    setTimeout(()=>{ bg.remove(); callback(success); }, 1800);
+  }
+  // Timeout
+  setTimeout(()=>{ if (!document.getElementById('pourBtn').disabled) endPour(glassFilled>=75&&glassFilled<=95); }, 8000);
+}
+
+// ==================== FARM MINI-GAME ====================
+function farmGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  let score = 0, timeLeft = 5;
+  bg.innerHTML = `<div class="minigame-card">
+    <h3>🐑 抓小羊！</h3>
+    <div class="mg-desc">点击乱跑的小羊！还剩 <span id="farmTime">5</span> 秒</div>
+    <div style="position:relative;height:140px;background:#f0fdf4;border-radius:16px;overflow:hidden;margin:8px 0;cursor:crosshair" id="farmField"></div>
+    <div class="mg-result" id="farmResult">抓到: 0 只</div>
+  </div>`;
+  document.body.appendChild(bg);
+
+  const field = document.getElementById('farmField');
+
+  function spawnSheep() {
+    if (timeLeft<=0) return;
+    const sheep = document.createElement('span');
+    sheep.textContent = '🐑';
+    sheep.style.cssText = 'position:absolute;font-size:2em;cursor:pointer;transition:all .3s;z-index:2';
+    const x = 10+Math.random()*70; const y = 10+Math.random()*60;
+    sheep.style.left = x+'%'; sheep.style.top = y+'%';
+    sheep.onclick = (e)=>{
+      e.stopPropagation();
+      score++; sheep.remove();
+      document.getElementById('farmResult').textContent = '抓到: '+score+' 只';
+      spawnSheep(); // spawn another
+    };
+    field.appendChild(sheep);
+    // Sheep runs away
+    setTimeout(()=>{
+      if (sheep.parentNode) {
+        sheep.style.left = (30+Math.random()*50)+'%';
+        sheep.style.top = (10+Math.random()*60)+'%';
+      }
+    }, 800);
+    setTimeout(()=>{ if (sheep.parentNode) sheep.remove(); }, 1800);
+  }
+
+  for (let i=0;i<3;i++) spawnSheep();
+
+  const farmTimer = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('farmTime').textContent = timeLeft;
+    if (timeLeft<=0) { clearInterval(farmTimer); endFarm(); }
+  }, 1000);
+
+  function endFarm() {
+    const res = document.getElementById('farmResult');
+    if (score>=5) {
+      res.textContent = '🐑 抓羊高手！运气+15 心情+10';
+      res.style.color = '#10b981';
+      G.luck=cl(G.luck+15); G.mood=cl(G.mood+10);
+    } else if (score>=2) {
+      res.textContent = '还不错，抓到了几只 运气+8';
+      res.style.color = '#f59e0b';
+      G.luck=cl(G.luck+8);
+    } else {
+      res.textContent = '小羊跑太快了...运气+3';
+      res.style.color = '#f59e0b';
+      G.luck=cl(G.luck+3);
+    }
+    updStats();
+    setTimeout(()=>{ bg.remove(); callback(score>=3); }, 1800);
+  }
+}
+
+// ==================== ARCADE MINI-GAME (打砖块) ====================
+function arcadeGame(callback) {
+  const bg = document.createElement('div');
+  bg.className = 'minigame-bg';
+  bg.innerHTML = `<div class="minigame-card" style="max-width:420px"><h3>🕹️ 打砖块！</h3><div class="mg-desc">移动鼠标控制挡板打碎所有砖块！</div><canvas id="ac" width="360" height="240" style="background:#0a0a14;border-radius:12px;display:block;margin:8px auto"></canvas><div class="mg-result" id="ar"></div></div>`;
+  document.body.appendChild(bg);
+  const c=document.getElementById('ac'),ctx2=c.getContext('2d');
+  let p={x:140,w:70},b={x:180,y:180,r:5,dx:3,dy:-3,on:false};
+  let br=[],sc=0,go=false;
+  for (let r=0;r<5;r++) for (let cl=0;cl<8;cl++) br.push({x:cl*45+2,y:r*20+10,w:41,h:16,alive:true,color:['#6366f1','#a855f7','#ec4899','#f59e0b','#10b981'][r]});
+  function dr(){ctx2.clearRect(0,0,360,240);br.forEach(b=>{if(b.alive){ctx2.fillStyle=b.color;ctx2.fillRect(b.x,b.y,b.w,b.h)}});ctx2.fillStyle='#fff';ctx2.fillRect(p.x,225,p.w,8);ctx2.fillStyle='#fbbf24';ctx2.beginPath();ctx2.arc(b.x,b.y,b.r,0,Math.PI*2);ctx2.fill();ctx2.fillStyle='#fff';ctx2.font='12px sans-serif';ctx2.fillText('Score:'+sc,10,15);if(!b.on){ctx2.fillStyle='rgba(255,255,255,0.8)';ctx2.font='16px sans-serif';ctx2.fillText('移动鼠标开始',110,130)}}
+  function up(){if(!b.on||go)return;b.x+=b.dx;b.y+=b.dy;if(b.x<=b.r||b.x>=360-b.r)b.dx*=-1;if(b.y<=b.r)b.dy*=-1;if(b.y>=220&&b.y<=230&&b.x>p.x-b.r&&b.x<p.x+70+b.r){b.dy=-Math.abs(b.dy);b.dx+=(b.x-p.x-35)*0.15}br.forEach(bk=>{if(!bk.alive)return;if(b.x>bk.x&&b.x<bk.x+bk.w&&b.y>bk.y&&b.y<bk.y+bk.h){bk.alive=false;b.dy*=-1;sc+=10;G.score+=2;if(br.every(bk=>!bk.alive)){go=true;end(true)}}});if(b.y>240){go=true;b.on=false;end(false)}}
+  function end(win){const r=document.getElementById('ar');if(win){r.textContent='🎉 通关！街机之王！+15分';r.style.color='#10b981';G.score+=15;G.mood=cl(G.mood+12)}else{r.textContent='游戏结束！得分:'+sc+' 心情+5';r.style.color='#f59e0b';G.mood=cl(G.mood+5)}updStats();setTimeout(()=>{bg.remove();callback(win)},1800)}
+  c.addEventListener('mousemove',e=>{const rect=c.getBoundingClientRect();p.x=Math.max(0,Math.min(290,e.clientX-rect.left-35));if(!b.on&&!go){b.on=true;b.x=p.x+35;b.y=180}});
+  c.addEventListener('touchmove',e=>{e.preventDefault();const rect=c.getBoundingClientRect();p.x=Math.max(0,Math.min(290,e.touches[0].clientX-rect.left-35));if(!b.on&&!go){b.on=true;b.x=p.x+35;b.y=180}});
+  dr();setInterval(()=>{if(!go){up();dr()}},16);
+}
+
+// === WEEKEND MODE ===
+const WEEKEND_BOOST = { e:3, m:4, l:3 };
+function isWeekend() { return G.day%7===6||G.day%7===0; }
+
+// ==================== GAME FLOW ====================
+function render() {
+  if (G.timeIdx >= SLOTS.length) { endDay(); return; }
+  const slot = SLOTS[G.timeIdx];
+  document.getElementById('timeChip').textContent = slot.e + ' ' + slot.t;
+  const acts = ACTS[slot.k];
+  const wb = isWeekend();
+  document.getElementById('choicesArea').innerHTML = acts.map((a,i) => {
+    const bonus = wb ? WEEKEND_BOOST : { e:0, m:0, l:0 };
+    const tags = [];
+    const e=a.e+bonus.e, m=a.m+bonus.m, l=a.l+bonus.l;
+    if (e>0) tags.push(`<span class="c-tag tag-up">⚡+${e}</span>`);
+    else if (e<0) tags.push(`<span class="c-tag tag-down">⚡${e}</span>`);
+    if (m>0) tags.push(`<span class="c-tag tag-up">😊+${m}</span>`);
+    else if (m<0) tags.push(`<span class="c-tag tag-down">😊${m}</span>`);
+    if (a.w>0) tags.push(`<span class="c-tag tag-up">📋+${a.w}</span>`);
+    if (l>0) tags.push(`<span class="c-tag tag-up">🍀+${l}</span>`);
+    const gameTag = a.game ? `<span class="c-tag tag-up">🎮小游戏</span>` : '';
+    if (a.loc==='gaming') tags.push(`<span class="c-tag tag-up">🕹️街机</span>`);
+    const wTag = wb ? ' ✨' : '';
+    return `<div class="choice" onclick="pick(${i})">
+      <div class="c-icon">${a.i}</div>
+      <div class="c-body"><div class="c-title">${a.t}${wTag}</div><div class="c-meta">📍 ${SCENES[a.loc].name} ${gameTag}</div></div>
+      <div class="c-tags">${tags.join('')}</div>
+    </div>`;
+  }).join('');
+
+  // Show challenge progress
+  if (G.challenge && !G.challengeDone) {
+    const cp = G.challenge;
+    document.getElementById('choicesArea').insertAdjacentHTML('beforeend',
+      `<div style="text-align:center;font-size:.7em;color:#8b5cf6;padding:6px;margin-top:4px;background:#faf5ff;border-radius:8px">🎯 今日挑战：${cp.desc}（${Math.min(cp.progress,cp.target)}/${cp.target}）</div>`);
+  }
+}
+
+function pick(idx) {
+  const slot = SLOTS[G.timeIdx];
+  const act = ACTS[slot.k][idx];
+
+  // Determine which mini-game to trigger
+  let gameType = act.game; // 'fishing' or undefined
+  if (!gameType) {
+    // Auto-detect mini-game based on activity
+    const t = act.t; const l = act.loc;
+    if (l==='gym') gameType = 'gym';
+    else if (l==='bar'||l==='mybar') gameType = Math.random()<0.4 ? 'bar' : null;
+    else if ((t.includes('做饭')||t.includes('做顿')) && Math.random()<0.5) gameType = 'cook';
+    else if (l==='farm' && Math.random()<0.4) gameType = 'farm';
+  }
+
+  if (gameType === 'fishing' && Math.random() < 0.5) {
+    fishingGame((success) => {
+      if (success) act.l = (act.l||0)+15;
+      finishPick(act);
+    });
+  } else if (gameType === 'cook') {
+    cookingGame((success) => {
+      if (success) { act.m = (act.m||0)+10; act.l = (act.l||0)+8; }
+      finishPick(act);
+    });
+  } else if (gameType === 'gym') {
+    gymGame((success) => {
+      if (success) { act.e = (act.e||0)+5; act.m = (act.m||0)+5; }
+      finishPick(act);
+    });
+  } else if (gameType === 'bar') {
+    barGame((success) => {
+      if (success) { act.m = (act.m||0)+10; act.s = (act.s||0)+5; }
+      finishPick(act);
+    });
+  } else if (gameType === 'farm') {
+    farmGame((success) => {
+      if (success) { act.l = (act.l||0)+10; act.m = (act.m||0)+5; }
+      finishPick(act);
+    });
+  } else if (gameType === 'gaming' || (act.loc==='gaming' && Math.random()<0.3)) {
+    arcadeGame((win) => {
+      if (win) { act.m = (act.m||0)+10; act.s = (act.s||0)+5; }
+      finishPick(act);
+    });
+  } else {
+    finishPick(act);
+  }
+}
+
+function finishPick(act) {
+  apply(act);
+
+  // Scene transition animation
+  const area = document.getElementById('sceneArea');
+  const travelEmojis = { fishing:'🎣💦🚗', gaming:'🎮✨🏃', bar:'🍺🎵🚗', mybar:'🥃✨🏃', farm:'🌾🐑🚗', gym:'💪🔥🏃', restaurant:'🍲♨️🚗', home:'🏠💤🏃', office:'📋✅🚗', street:'🚗💨🏃' };
+  const travelNames = { fishing:'前往水库边...', gaming:'去陪玩店...', bar:'去酒吧...', mybar:'去小酒吧...', farm:'去农场...', gym:'去健身房...', restaurant:'去餐厅...', home:'回家...', office:'去住建局...', street:'在路上...' };
+
+  // Flash transition effect
+  area.style.transition = 'opacity 0.2s, transform 0.2s';
+  area.style.opacity = '0.6';
+  area.style.transform = 'scale(0.97)';
+
+  setTimeout(()=>{
+    setScene(act.loc, false);
+    area.style.opacity = '1';
+    area.style.transform = 'scale(1)';
+    area.classList.add('scene-enter');
+    setTimeout(()=>area.classList.remove('scene-enter'), 500);
+    sceneAnim(travelEmojis[act.loc]||'✨');
+
+    // Show travel toast
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#fff;border:2px solid #6366f1;color:#6366f1;padding:8px 20px;border-radius:20px;font-size:.85em;font-weight:700;z-index:30;box-shadow:0 4px 20px rgba(99,102,241,0.2);animation:toastIn .3s,toastOut .3s 1.5s forwards';
+    toast.textContent = travelNames[act.loc]||'出发...';
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.remove(), 2000);
+  }, 200);
+
+  updStats();
+  G.logs.push({ time:SLOTS[G.timeIdx].t, action:act.t, scene:act.loc, msg:act.msg, cat:act.loc, s:act.s||0 });
+
+  document.getElementById('choicesArea').innerHTML =
+    `<div class="result-box"><div class="r-icon">${act.i}</div><div class="r-text">${act.msg}</div></div>`;
+
+  // Trigger systems
+  updateStreak(act.loc, act.t);
+
+  // Show朋友圈 after certain activities (25% chance)
+  const momentTriggers = { fishing:'fishing', gym:'gym', bar:'bar', mybar:'bar', farm:'farm', gaming:'gaming' };
+  const mTrigger = momentTriggers[act.loc];
+  if (mTrigger && Math.random()<0.25) {
+    setTimeout(()=>showMoment(mTrigger), 1500);
+  }
+
+  // Check story progression
+  const storyEvent = checkStoryLine();
+  if (storyEvent && Math.random()<0.5) {
+    setTimeout(()=>{
+      const bg = document.createElement('div'); bg.className='modal-bg';
+      bg.innerHTML = `<div class="modal-card"><div class="ev-icon">${storyEvent.icon}</div><h3>💘 ${storyEvent.title}</h3><div class="ev-text">${storyEvent.desc}</div><button onclick="this.closest('.modal-bg').remove()">❤️ 继续</button></div>`;
+      document.body.appendChild(bg);
+    }, 2000);
+  }
+
+  // Random event (30%)
+  if (Math.random() < 0.3) {
+    setTimeout(()=>randomEvent(), 1000);
+  } else {
+    setTimeout(()=>{ G.timeIdx++; render(); }, 1500);
+  }
+}
+
+function randomEvent() {
+  const ev = RANDOM_EVENTS[Math.floor(Math.random()*RANDOM_EVENTS.length)];
+  G.energy=cl(G.energy+(ev.e||0)); G.mood=cl(G.mood+(ev.m||0));
+  G.work=cl(G.work+(ev.w||0)); G.social=cl(G.social+(ev.s||0));
+  G.luck=cl(G.luck+(ev.l||0));
+  updStats();
+
+  // Cat adoption trigger
+  if (ev.cat==='cat' && !G.hasCat && Math.random()<0.4) {
+    G.hasCat = true; G.catMood = 60;
+    document.getElementById('petEl').style.display = 'block';
+    ev.desc += '\n\n🐱 这只橘猫好像赖上你了！它跟着你回了家。从此你多了一个毛茸茸的室友。';
+    checkAchievements();
+  }
+
+  // Random mini-game for certain event types (20% chance)
+  const miniChance = Math.random();
+  if (ev.cat==='cook' && miniChance<0.3) {
+    showEventWithGame(ev, 'cook');
+    return;
+  } else if (ev.cat==='bar' && miniChance<0.3) {
+    showEventWithGame(ev, 'bar');
+    return;
+  } else if (ev.cat==='farm' && miniChance<0.3) {
+    showEventWithGame(ev, 'farm');
+    return;
+  }
+
+  showEventModal(ev);
+}
+
+function showEventWithGame(ev, gameType) {
+  const gameFn = gameType==='cook'?cookingGame:gameType==='bar'?barGame:farmGame;
+  const gameName = gameType==='cook'?'🍳 做饭小游戏':gameType==='bar'?'🍺 倒酒挑战':'🐑 抓小羊';
+  ev.desc += '\n\n🎮 触发'+gameName+'！';
+  showEventModal(ev, ()=>{ gameFn(()=>{ G.timeIdx++; render(); }); });
+}
+
+function showEventModal(ev, hasGame) {
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.id = 'evModal';
+  bg.innerHTML = `<div class="modal-card">
+    <div class="ev-icon">${ev.icon}</div>
+    <h3>🎲 ${ev.title}</h3>
+    <div class="ev-text">${ev.desc.replace(/\n/g,'<br>')}</div>
+    <div class="ev-effects">${ev.m?'😊心情 +'+ev.m+' ':''}${ev.s?'👥社交 +'+ev.s+' ':''}${ev.l?'🍀运气 +'+ev.l+' ':''}</div>
+    <button id="evBtn">继续</button>
+  </div>`;
+  document.body.appendChild(bg);
+  document.getElementById('evBtn').onclick = function() {
+    bg.remove();
+    if (hasGame) { hasGame(); } else { G.timeIdx++; render(); }
+  };
+}
+
+// ==================== END DAY + WEEKLY ====================
+function endDay() {
+  const avg = (G.energy+G.mood+G.work+G.social+G.luck)/5;
+  let grade, color;
+  if (avg>=92) { grade='SSS+'; color='#f59e0b'; }
+  else if (avg>=83) { grade='S'; color='#f59e0b'; }
+  else if (avg>=70) { grade='A'; color='#6366f1'; }
+  else if (avg>=57) { grade='B'; color='#8b5cf6'; }
+  else if (avg>=44) { grade='C'; color='#f97316'; }
+  else { grade='D'; color='#ef4444'; }
+
+  const isSSS = grade === 'SSS+';
+  G.score += Math.round(avg);
+  G.dailyStats.push({ day:G.day, grade, avg:Math.round(avg), energy:G.energy, mood:G.mood, work:G.work, social:G.social, luck:G.luck });
+
+  // Check SSS achievement + daily challenge
+  if (isSSS) { G.achievements.sss = true; renderAchievements(); }
+  const challengeDone = checkChallenge();
+  if (challengeDone) { G.score += G.challenge.reward; }
+
+  const specials = [];
+  if (G.mood>=85) specials.push('今天心情格外好…是不是跟她有关？');
+  if (G.social>=85) specials.push('社交之王！陪玩店和酒吧两头跑人脉拉满。');
+  if (G.luck>=85) specials.push('运气爆棚！钓鱼爆护还免了单，今天是什么神仙日子。');
+  if (G.hasCat) specials.push('回家的时候橘猫已经在门口等着了，冲你喵了一声。');
+
+  // Weekly report every 7 days
+  let weeklyHTML = '';
+  if (G.day % 7 === 0 && G.dailyStats.length >= 7) {
+    const week = G.dailyStats.slice(-7);
+    const wAvg = Math.round(week.reduce((s,d)=>s+d.avg,0)/7);
+    const best = week.reduce((a,b)=>a.avg>b.avg?a:b);
+    const fishDays = G.logs.filter(l=>l.scene==='fishing').length;
+    const barDays = G.logs.filter(l=>l.scene==='bar'||l.scene==='mybar').length;
+    const cookEvents = G.logs.filter(l=>l.msg.includes('做饭')||l.msg.includes('鸡蛋')||l.msg.includes('牛腩')||l.msg.includes('肉')).length;
+    weeklyHTML = `<div class="weekly-section">
+      <h4>📊 第${Math.floor(G.day/7)}周周报</h4>
+      <div>本周均分：${wAvg} · 最高：第${best.day}天 ${best.grade}(${best.avg}分)<br>
+      🎣钓鱼${fishDays}次 · 🍺喝酒${barDays}次 · 🍳做饭${cookEvents}次<br>
+      ${G.hasCat?'🐱 橘猫陪伴了你7天':' '}</div></div>`;
+  }
+
+  document.getElementById('choicesArea').innerHTML = '';
+
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal-card">
+    <h3>🌙 周哥的一天 · 完结</h3>
+    ${weeklyHTML}
+    <div class="summary-stats">
+      <div class="ss"><div class="sv" style="color:#ef4444">${G.energy}</div>精力</div>
+      <div class="ss"><div class="sv" style="color:#f59e0b">${G.mood}</div>心情</div>
+      <div class="ss"><div class="sv" style="color:#6366f1">${G.work}</div>效率</div>
+      <div class="ss"><div class="sv" style="color:#a855f7">${G.social}</div>社交</div>
+      <div class="ss"><div class="sv" style="color:#ec4899">${G.luck}</div>运气</div>
+    </div>
+    ${challengeDone ? `<div style="background:#fef3c7;padding:8px;border-radius:10px;margin:8px 0;font-size:.8em;color:#f59e0b;font-weight:700">🎯 每日挑战完成！+${G.challenge.reward}分</div>` : ''}
+    <div class="grade-badge" style="color:${color}">${grade}</div>
+    ${isSSS ? `<div class="sss-badge">🏆 神秘奖励解锁！截图找周哥领奖 🥃</div>` : ''}
+    <div class="ev-text">${specials.map(s=>'💭 '+s).join('<br>')}</div>
+    <div style="color:#9ca3af;font-size:.72em;margin-top:8px">总积分 ${G.score} · 成就 ${Object.values(G.achievements).filter(Boolean).length}/${Object.keys(ACHIEVEMENTS).length}</div>
+    <button onclick="restart();this.closest('.modal-bg').remove()">🔄 再来一天</button>
+  </div>`;
+  document.body.appendChild(bg);
+
+  checkAchievements();
+}
+
+function restart() {
+  G.energy=80; G.mood=70; G.work=40; G.social=50; G.luck=50;
+  G.timeIdx=0; G.logs=[]; G.day++; G.scene='home'; G.challengeDone=false;
+  rollWeather(); rollFortune(); rollChallenge();
+  document.getElementById('sceneArea').className = 'scene scene-home';
+  document.getElementById('locTitle').textContent = SCENES.home.name;
+  document.getElementById('locSub').textContent = SCENES.home.sub;
+  updStats(); setScene('home', false);
+  // Show fortune on new day
+  const f = G.fortune;
+  setTimeout(()=>{
+    const bg=document.createElement('div');bg.className='modal-bg';
+    bg.innerHTML=`<div class="modal-card"><div class="ev-icon">${f.icon}</div><h3>🔮 今日运势：${f.name}</h3><div class="ev-text">${f.desc}</div><div class="ev-effects" style="font-size:.7em;color:#6366f1;margin-top:8px">🎯 每日挑战：${G.challenge.desc}</div>${isWeekend()?'<div style="color:#ec4899;font-weight:700;margin-top:4px">🎪 周末模式！所有活动额外加成 ✨</div>':''}<button onclick="this.closest('.modal-bg').remove()">开始新的一天！</button></div>`;
+    document.body.appendChild(bg);
+    setTimeout(()=>{ const m=document.querySelector('.modal-bg'); if(m)m.remove(); }, 4000);
+  }, 300);
+  render();
+  if (G.hasCat && Math.random()<0.3) { G.catMood = cl(G.catMood+10); }
+}
+
+function showLog() {
+  if (!G.logs.length) { alert('还没有记录'); return; }
+  const w = window.open('','','width=420,height=600');
+  w.document.write(`<html><head><meta charset="UTF-8"><title>日程</title>
+    <style>body{font-family:'Microsoft YaHei';background:#faf5ff;color:#1e1b4b;padding:18px}
+    h2{color:#6366f1;font-size:1em}h3{color:#8b5cf6;font-size:.78em}
+    .e{padding:10px 0;border-bottom:1px solid #ede9fe;font-size:.8em}
+    .t{color:#6366f1;font-weight:700}.s{color:#a855f7}
+    .m{color:#6b7280;font-size:.73em;margin-top:2px}</style></head><body>
+    <h2>📜 周哥的日程</h2><h3>第${G.day}天 · ${WEATHERS[G.weather].icon} ${WEATHERS[G.weather].name}</h3>
+    ${G.logs.map(l=>`<div class="e"><span class="t">${l.time}</span> <span class="s">${SCENES[l.scene].name}</span><br>${l.action}<div class="m">→ ${l.msg}</div></div>`).join('')}
+    </body></html>`);
+}
+
+function toggleSound() {
+  G.soundOn = !G.soundOn;
+  document.getElementById('soundToggle').textContent = G.soundOn ? '🔊 音效' : '🔇 静音';
+}
+
+// ==================== BOOT ====================
+rollWeather(); rollFortune(); rollChallenge();
+drawChar();
+updStats();
+setScene('home', false);
+// Show initial fortune
+setTimeout(()=>{
+  const f = G.fortune;
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal-card"><div class="ev-icon">${f.icon}</div><h3>🔮 今日运势：${f.name}</h3><div class="ev-text">${f.desc}</div><div class="ev-effects" style="font-size:.7em;color:#6366f1;margin-top:8px">🎯 每日挑战：${G.challenge.desc}</div><button onclick="this.closest('.modal-bg').remove()">开始新的一天！</button></div>`;
+  document.body.appendChild(bg);
+}, 500);
+render();
+
+// === PWA ===
+if ('serviceWorker' in navigator) {
+  const swCode = `self.addEventListener('install',e=>{e.waitUntil(caches.open('zgv1').then(c=>c.addAll(['/'])).then(()=>self.skipWaiting()))});
+self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});`;
+  const swBlob = new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+}
+// Manifest as blob
+const manifest = {name:'周哥的一天',short_name:'周哥的一天',start_url:'.',display:'standalone',background_color:'#e0e7ff',theme_color:'#6366f1',orientation:'portrait',
+  icons:[{src:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="192" height="192" rx="40" fill="#6366f1"/><text x="96" y="120" font-size="100" text-anchor="middle">🎮</text></svg>'),sizes:'192x192',type:'image/svg+xml'}]};
+const mBlob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+const mLink = document.createElement('link');
+mLink.rel='manifest';mLink.href=URL.createObjectURL(mBlob);
+document.head.appendChild(mLink);
+</script>
+</body>
+</html>
