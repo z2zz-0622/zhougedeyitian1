@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="周哥的一生">
+<meta name="theme-color" content="#6366f1">
+<title>周哥的一生</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;
+  background:linear-gradient(180deg,#e0e7ff,#ede9fe,#fce7f3);
+  min-height:100vh;display:flex;justify-content:center;align-items:center;padding:10px;
+}
+.game{
+  width:420px;max-width:100%;
+  background:rgba(255,255,255,.94);border-radius:20px;
+  box-shadow:0 8px 50px rgba(99,102,241,.12);
+  overflow:hidden;border:1px solid rgba(255,255,255,.6);
+}
+.hdr{
+  background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
+  padding:12px 18px;color:#fff;display:flex;justify-content:space-between;align-items:center;
+  font-size:.85em;font-weight:700;
+}
+.hdr .age{font-size:1.2em}
+.scene-area{text-align:center;padding:16px;position:relative;min-height:160px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.scene-area canvas{image-rendering:pixelated;border-radius:16px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.stage-tag{display:inline-block;padding:3px 12px;border-radius:12px;font-size:.7em;font-weight:700;margin-top:6px}
+.stage-young{background:#dbeafe;color:#2563eb}
+.stage-love{background:#fce7f3;color:#ec4899}
+.stage-married{background:#fef3c7;color:#d97706}
+.stage-parent{background:#dcfce7;color:#16a34a}
+.stage-old{background:#f1f5f9;color:#64748b}
+
+.stats-row{display:flex;padding:8px 12px;gap:4px;flex-wrap:wrap;border-top:1px solid #f1f5f9}
+.stat-s{flex:1;min-width:50px;text-align:center;font-size:.65em}
+.stat-s .bar{height:3px;background:#e5e7eb;border-radius:2px;margin:2px 3px;overflow:hidden}
+.stat-s .bar div{height:100%;border-radius:2px;transition:width .4s}
+
+.info-bar{padding:6px 14px;font-size:.7em;color:#6b7280;text-align:center;border-top:1px solid #f1f5f9;min-height:24px}
+.family-info{padding:6px 14px;font-size:.7em;text-align:center;border-top:1px solid #f1f5f9;background:#faf5ff}
+.family-info span{color:#6366f1;font-weight:600}
+
+.actions{padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.act-btn{
+  padding:10px 6px;border:1.5px solid #e5e7eb;border-radius:12px;
+  background:#fff;cursor:pointer;font-size:.78em;text-align:center;
+  transition:all .2s;font-weight:600;color:#374151
+}
+.act-btn:hover{border-color:#a855f7;background:#faf5ff;transform:translateY(-1px)}
+.act-btn:active{transform:scale(.95)}
+.act-btn .a-icon{font-size:1.4em;display:block;margin-bottom:2px}
+.act-btn.disabled{opacity:.3;pointer-events:none}
+
+.bottom-bar{display:flex;padding:8px 14px;gap:8px;border-top:1px solid #f1f5f9}
+.bottom-bar button{
+  flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:10px;
+  background:#fff;cursor:pointer;font-size:.7em;font-weight:600;color:#6b7280
+}
+.bottom-bar button:hover{background:#f5f3ff;border-color:#a855f7}
+
+.modal-bg{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .2s
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-card{
+  background:#fff;border-radius:20px;padding:24px;
+  max-width:360px;width:92%;text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.15);
+  animation:popIn .35s cubic-bezier(.175,.885,.32,1.275)
+}
+@keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-card h3{color:#6366f1;margin-bottom:6px}
+.modal-card .ev-icon{font-size:3em;margin-bottom:6px}
+.modal-card .ev-text{font-size:.85em;color:#4b5563;line-height:1.7;margin:8px 0}
+.modal-card button{
+  margin-top:10px;padding:10px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;border:none;border-radius:10px;font-size:.85em;font-weight:700;cursor:pointer
+}
+</style>
+</head>
+<body>
+
+<div class="game">
+  <div class="hdr">
+    <span>🎮 周哥的一生</span>
+    <span class="age">年龄: <b id="ageNum">25</b></span>
+    <span id="dayNum">第1天</span>
+  </div>
+
+  <div class="scene-area" id="sceneArea">
+    <canvas id="charCanvas" width="140" height="160"></canvas>
+    <div class="stage-tag stage-young" id="stageTag">🎯 单身青年</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-s">❤️健康<div class="bar"><div id="bHealth" style="width:80%;background:#ef4444"></div></div><span id="vHealth">80</span></div>
+    <div class="stat-s">😊心情<div class="bar"><div id="bMood" style="width:70%;background:#f59e0b"></div></div><span id="vMood">70</span></div>
+    <div class="stat-s">💰财富<div class="bar"><div id="bWealth" style="width:30%;background:#10b981"></div></div><span id="vWealth">30</span></div>
+    <div class="stat-s">💘感情<div class="bar"><div id="bLove" style="width:0%;background:#ec4899"></div></div><span id="vLove">0</span></div>
+    <div class="stat-s">🍚饱腹<div class="bar"><div id="bFood" style="width:60%;background:#f97316"></div></div><span id="vFood">60</span></div>
+    <div class="stat-s">🧼清洁<div class="bar"><div id="bClean" style="width:70%;background:#3b82f6"></div></div><span id="vClean">70</span></div>
+  </div>
+
+  <div class="family-info" id="familyInfo">单身未婚 · 住在小公寓里</div>
+
+  <div class="info-bar" id="infoBar">新的一天开始了，周哥。</div>
+
+  <div class="actions" id="actions"></div>
+
+  <div class="bottom-bar">
+    <button onclick="saveGame()">💾 存档</button>
+    <button onclick="loadGame()">📂 读档</button>
+    <button onclick="resetGame()">🔄 重来</button>
+  </div>
+</div>
+
+<script>
+// ==================== GAME STATE ====================
+const STATE_KEY = 'zhouge_life_save';
+let Z = {
+  age:25, day:1, health:80, mood:70, wealth:30, love:0, food:60, clean:70,
+  stage:'young', // young/love/married/parent/old
+  partner:null, // {name, love}
+  children:0,
+  childAges:[],
+  events:[], // recent event log
+  alive:true,
+};
+
+// ==================== PARTNER NAMES ====================
+const PARTNER_NAMES = ['林晓雨','苏晴','陈若曦','王思雅','赵以安','许墨染'];
+
+// ==================== ACTIONS ====================
+const ALL_ACTIONS = {
+  young: [
+    {t:'吃饭',i:'🍚',f:()=>{Z.food=cl(Z.food+25);Z.health=cl(Z.health+3);msg('吃饱了！舒服。')}},
+    {t:'洗澡',i:'🛁',f:()=>{Z.clean=cl(Z.clean+30);Z.mood=cl(Z.mood+5);msg('洗了个热水澡，浑身清爽。')}},
+    {t:'睡觉',i:'😴',f:()=>{Z.health=cl(Z.health+15);Z.mood=cl(Z.mood+5);Z.food=cl(Z.food-10);Z.clean=cl(Z.clean-5);msg('睡了一觉，精神恢复了。')}},
+    {t:'工作',i:'💼',f:()=>{Z.wealth=cl(Z.wealth+10);Z.health=cl(Z.health-3);Z.mood=cl(Z.mood-3);Z.food=cl(Z.food-8);msg('认真工作了一天，入账了一些。')}},
+    {t:'社交',i:'👥',f:()=>{Z.mood=cl(Z.mood+10);Z.love=cl(Z.love+(Z.love>0?5:0));Z.wealth=cl(Z.wealth-3);msg('跟朋友聚了聚，聊得很开心。')}},
+    {t:'健身',i:'🏋️',f:()=>{Z.health=cl(Z.health+8);Z.clean=cl(Z.clean-10);Z.food=cl(Z.food-10);msg('撸铁的感觉真好，出了一身汗。')}},
+    {t:'约会',i:'💝',f:()=>{if(Z.love>0){Z.love=cl(Z.love+15);Z.mood=cl(Z.mood+15);Z.wealth=cl(Z.wealth-8);msg('约会很顺利！两个人的关系又近了一步。')}else{Z.love=5;Z.mood=cl(Z.mood+10);msg('认识了新朋友！感觉还不错。')}}},
+    {t:'求 婚',i:'💍',f:()=>{if(Z.love>=70&&!Z.partner){Z.partner={name:PARTNER_NAMES[Math.floor(Math.random()*PARTNER_NAMES.length)],love:Z.love};Z.stage='married';Z.mood=cl(Z.mood+30);msg('她答应了！！！💍 周哥要结婚了！！！')}else if(Z.partner){msg('你已经结婚了！')}else{msg('感情还不够深...需要更多相处。')}}},
+    {t:'生宝宝',i:'👶',f:()=>{if(Z.partner&&Z.children<3&&Math.random()<.6){Z.children++;Z.childAges.push(0);Z.mood=cl(Z.mood+20);Z.wealth=cl(Z.wealth-10);msg('🎉 宝宝出生了！！！是个健康的宝宝，周哥当爸爸了！')}else if(!Z.partner){msg('先结婚才能生宝宝哦。')}else if(Z.children>=3){msg('家里已经三个娃了，够热闹了！')}else{msg('还在努力中...')}}},
+  ],
+};
+
+// Merge stages
+function getActions() {
+  const acts = [...ALL_ACTIONS.young];
+  // Override求婚/生宝宝 based on stage
+  if (Z.stage==='married'||Z.stage==='parent'||Z.stage==='old') {
+    // Find and modify
+  }
+  return acts;
+}
+
+// ==================== HELPERS ====================
+const cl=v=>Math.min(100,Math.max(0,v));
+function msg(t){document.getElementById('infoBar').textContent=t}
+
+// ==================== LIFE EVENTS ====================
+function checkLifeEvents() {
+  // Age-based transitions
+  if (Z.age>=28&&!Z.partner&&Z.stage==='young'&&Math.random()<.15) {
+    showEvent('💔','家里催婚了','"你都多大了还不找对象？隔壁老王的儿子都会打酱油了！"——来自妈妈的电话。',0,-5,0,5,0);
+  }
+  if (Z.age>=30&&Z.partner&&!Z.children&&Z.stage==='married'&&Math.random()<.2) {
+    showEvent('👶','关于孩子的讨论','"我们要不要生个宝宝？"她看着你，眼睛里有星星。',0,5,0,5,0);
+  }
+  if (Z.age>=50&&Z.stage!=='old'&&Z.stage!=='parent') {
+    Z.stage='old';
+    updateStage();
+    showEvent('🧓','步入老年','时间过得真快。镜子里的人两鬓微白，但眼神依然坚定。这一生，挺好的。',0,-5,0,0,0);
+  }
+  if (Z.age>=55&&Z.stage==='parent'&&Z.children>0) {
+    Z.stage='old';
+    updateStage();
+    showEvent('🎓','孩子长大了','最大的孩子已经成年了。看着他们独立的样子，周哥又欣慰又感慨。',0,10,0,10,0);
+  }
+  if (Z.age>=70&&Math.random()<.15) {
+    showEvent('📜','老朋友聚会','几个老友聚在一起，聊的都是当年的故事。有些人已经不在了，但回忆永远鲜活。',0,8,0,5,0);
+  }
+  // Random good/bad events
+  if (Math.random()<.12) {
+    const evs = [
+      {icon:'🎣',title:'钓到大鱼！',desc:'水库边蹲了一下午，终于中了一条巨物！朋友圈又炸了。',h:0,m:15,w:0,l:0},
+      {icon:'🍀',title:'意外之财',desc:'买的彩票居然中了五百块！虽然不多但是个惊喜。',h:0,m:10,w:10,l:0},
+      {icon:'🥃',title:'朋友送了瓶好酒',desc:'泥煤味的艾雷岛单一麦芽。这个朋友值得深交。',h:0,m:8,w:0,l:0},
+      {icon:'😷',title:'感冒了',desc:'换季的时候最容易中招。休息几天就好了。',h:-10,m:-8,w:0,l:0},
+      {icon:'💻',title:'电脑坏了',desc:'正打排位呢屏幕黑了。修电脑花了一笔。',h:0,m:-12,w:-8,l:0},
+      {icon:'🌧',title:'下雨天宅家',desc:'下雨哪儿也去不了。煮了碗面，窝在沙发上看电影。',h:0,m:5,w:0,l:0},
+    ];
+    const ev=evs[Math.floor(Math.random()*evs.length)];
+    showEvent(ev.icon,ev.title,ev.desc,ev.h,ev.m,ev.w,ev.l);
+  }
+  // Death check
+  if (Z.age>=75&&Math.random()<.03) {
+    endLife('寿终正寝','😇','周哥在一个阳光温暖的午后安详地闭上了眼睛。享年'+Z.age+'岁。\n这一生：结婚生子，儿孙满堂，钓了无数条鱼，喝了无数杯威士忌。\n\n值得。');
+    return;
+  }
+  if (Z.health<=5) {
+    endLife('健康耗尽','💔','身体终于撑不住了。周哥在医院里闭上了眼睛。\n\n如果当初多注意身体，也许能多陪家人几年。');
+    return;
+  }
+}
+
+function endLife(title,icon,desc) {
+  Z.alive=false;
+  updateActions();
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal-card"><div class="ev-icon">${icon}</div><h3>${title}</h3><div class="ev-text" style="white-space:pre-line">${desc}</div><div style="color:#9ca3af;font-size:.7em;margin:6px 0">享年${Z.age}岁 · 子女${Z.children}人</div><button onclick="resetGame();this.closest('.modal-bg').remove()">🔄 重新开始</button></div>`;
+  document.body.appendChild(bg);
+  saveGame();
+}
+
+function showEvent(icon,title,desc,h,m,w,l) {
+  Z.health=cl(Z.health+(h||0));Z.mood=cl(Z.mood+(m||0));
+  Z.wealth=cl(Z.wealth+(w||0));Z.love=cl(Z.love+(l||0));
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal-card"><div class="ev-icon">${icon}</div><h3>${title}</h3><div class="ev-text">${desc}</div><button onclick="this.closest('.modal-bg').remove()">继续</button></div>`;
+  document.body.appendChild(bg);
+}
+
+// ==================== UPDATE ====================
+function updateStage() {
+  const el=document.getElementById('stageTag');
+  if (Z.stage==='young') { el.textContent='🎯 单身青年'; el.className='stage-tag stage-young'; }
+  else if (Z.stage==='love') { el.textContent='💝 热恋中'; el.className='stage-tag stage-love'; }
+  else if (Z.stage==='married') { el.textContent='💒 已婚'; el.className='stage-tag stage-married'; }
+  else if (Z.stage==='parent') { el.textContent='👨‍👩‍👧 为人父母'; el.className='stage-tag stage-parent'; }
+  else if (Z.stage==='old') { el.textContent='🧓 安享晚年'; el.className='stage-tag stage-old'; }
+}
+
+function updateFamily() {
+  let t='';
+  if (Z.partner) t+=`妻子: ${Z.partner.name} 💕 · `;
+  if (Z.children>0) t+=`子女: ${Z.children}人 `+Z.childAges.map(a=>`👶${a}岁`).join(' ');
+  else t+=Z.partner?'夫妇二人世界':'单身未婚';
+  t+=' · 住在'+ (Z.wealth>70?'大别墅🏡':Z.wealth>40?'公寓🏢':'出租屋🏠');
+  document.getElementById('familyInfo').innerHTML=t;
+}
+
+function updateUI() {
+  document.getElementById('ageNum').textContent=Z.age;
+  document.getElementById('dayNum').textContent='第'+Z.day+'天';
+  ['Health','Mood','Wealth','Love','Food','Clean'].forEach(k=>{
+    const v=Z[k.toLowerCase()];
+    document.getElementById('v'+k).textContent=v;
+    document.getElementById('b'+k).style.width=v+'%';
+  });
+  updateStage();
+  updateFamily();
+  drawChar();
+}
+
+function advanceDay() {
+  Z.day++;
+  // Age every 30 days (simulated)
+  if (Z.day%30===0) Z.age++;
+  // Passive decay
+  Z.food=cl(Z.food-8); Z.clean=cl(Z.clean-5);
+  Z.mood=cl(Z.mood-(Z.food<20?5:1));
+  Z.health=cl(Z.health-(Z.food<10?8:Z.clean<10?5:1));
+  // Kids grow
+  Z.childAges=Z.childAges.map(a=>Z.day%90===0?a+1:a);
+  // Love decays if married
+  if (Z.partner) Z.love=cl(Z.love-0.5);
+  // Transition stages
+  if (Z.love>=50&&!Z.partner&&Z.stage==='young') Z.stage='love';
+  if (Z.children>0&&Z.stage==='married') Z.stage='parent';
+  updateUI();
+  checkLifeEvents();
+  saveGame();
+}
+
+// ==================== ACTIONS ====================
+function doAction(idx) {
+  if (!Z.alive) return;
+  const acts = getActions();
+  const act = acts[idx];
+
+  // Custom action overrides
+  if (act.t==='求 婚'&&Z.stage==='married') { msg('你已经结婚了！'); return; }
+  if (act.t==='生宝宝'&&!Z.partner) { msg('先结婚才能生宝宝。'); return; }
+  if (act.t==='生宝宝'&&Z.children>=3) { msg('三个娃够了！'); return; }
+
+  act.f();
+  advanceDay();
+  updateUI();
+  updateActions();
+}
+
+function updateActions() {
+  const acts = getActions();
+  const el = document.getElementById('actions');
+  if (!Z.alive) { el.innerHTML='<div style="text-align:center;color:#9ca3af;padding:20px;grid-column:1/-1">周哥的一生已经走完。点击下方重来。</div>'; return; }
+  el.innerHTML = acts.map((a,i)=>{
+    let disabled = false;
+    if (a.t==='求 婚') {
+      if (Z.love<70||Z.partner) disabled=true;
+    }
+    if (a.t==='生宝宝') {
+      if (!Z.partner||Z.children>=3) disabled=true;
+    }
+    return `<button class="act-btn${disabled?' disabled':''}" onclick="doAction(${i})"><span class="a-icon">${a.i}</span>${a.t}</button>`;
+  }).join('');
+}
+
+// ==================== PIXEL CHARACTER ====================
+const canvas=document.getElementById('charCanvas');
+const ctx2=canvas.getContext('2d');
+
+function drawChar() {
+  ctx2.clearRect(0,0,140,160);
+  const s=3,set=(x,y,w,h,c)=>{ctx2.fillStyle=c;ctx2.fillRect(x,y,w||s,h||s)};
+  const SK='#fddcc4',H='#1a0f0a',GL='#d4a853',SH='#1a1a1a';
+  const ageMod=Z.age>60?0.7:Z.age>40?0.85:1;
+  const hairColor=Z.age>55?'#888':Z.age>35?'#333':H;
+
+  // Hair (微分碎盖)
+  for(let r=0;r<8;r++)for(let c=2;c<18;c++)set(22+c*s,4+r*s,s,s,hairColor);
+  for(let c=2;c<18;c++){set(22+c*s,24,s,s,hairColor);if(c%3===0)set(22+c*s,20,s,s*2,hairColor);}
+  set(18,20,s*2,s*10,hairColor);set(76,20,s*2,s*10,hairColor);
+
+  // Face
+  for(let r=0;r<12;r++)for(let c=2;c<18;c++)set(22+c*s,28+r*s,s,s,SK);
+
+  // Age wrinkles
+  if(Z.age>50){set(30,60,s*8,s,'rgba(0,0,0,.06)');set(70,60,s*8,s,'rgba(0,0,0,.06)');}
+  if(Z.age>65){set(36,56,s*3,s,'rgba(0,0,0,.08)');set(64,56,s*3,s,'rgba(0,0,0,.08)');}
+
+  // Glasses (金丝)
+  set(38,48,s*8,s,GL);
+  set(32,44,s*9,s*7,'rgba(212,168,83,.08)');
+  set(32,44,s*9,s,GL);set(32,50,s*9,s,GL);set(32,44,s,s*7,GL);set(40,44,s,s*7,GL);
+  set(52,44,s*9,s*7,'rgba(212,168,83,.08)');
+  set(52,44,s*9,s,GL);set(52,50,s*9,s,GL);set(52,44,s,s*7,GL);set(60,44,s,s*7,GL);
+  set(28,46,s*3,s*1.5,GL);set(64,46,s*3,s*1.5,GL);
+
+  // Eyes
+  const eo=Z.mood>70?5:Z.mood>30?4:3;
+  set(34,46,s*5,eo,'#fff');set(54,46,s*5,eo,'#fff');
+  set(38,45,s*3,s*3,'#111');set(58,45,s*3,s*3,'#111');
+  set(41,44,s*1.5,s*1.5,'#fff');set(61,44,s*1.5,s*1.5,'#fff');
+
+  // Mouth
+  const my=Z.mood>70?72:Z.mood>30?74:78;
+  if(Z.mood>70){set(44,my,s*6,s*2,'#dc2626');set(46,my-4,s*4,s*4,'#dc2626')}
+  else if(Z.mood<30){set(48,my+4,s*3,s*2,'#dc2626')}
+  else{set(48,my,s*3,s*2,'#dc2626')}
+
+  // Necklace
+  set(52,76,s*6,s*1.5,GL);set(55,77,s*1.5,s*3,GL);
+
+  // Black T-shirt
+  for(let r=0;r<10;r++)for(let c=3;c<17;c++)set(22+c*s,78+r*s,s,s,SH);
+  set(46,78,s*8,s*2,'#222');
+
+  // Arms
+  for(let r=0;r<6;r++){set(18,80+r*s,s*3,s,SK);set(76,80+r*s,s*3,s,SK)}
+
+  // If married, draw partner beside
+  if(Z.partner){
+    const PS='#ffd5c2',PH='#2d1810';
+    for(let r=0;r<6;r++)for(let c=1;c<10;c++)set(98+c*s,16+r*s,s,s,PH);
+    for(let r=0;r<8;r++)for(let c=1;c<12;c++)set(98+c*s,30+r*s,s,s,PS);
+    set(108,38,s*4,3,'#fff');set(116,38,s*4,3,'#fff');
+    set(112,37,s*2,s*2,'#111');set(120,37,s*2,s*2,'#111');
+    if(Z.mood>50){set(110,52,s*6,s*2,'#e8536b');set(112,50,s*4,s*3,'#e8536b')}
+  }
+}
+
+// ==================== SAVE/LOAD ====================
+function saveGame() {
+  localStorage.setItem(STATE_KEY,JSON.stringify(Z));
+  msg('💾 已存档！');
+}
+function loadGame() {
+  const d=localStorage.getItem(STATE_KEY);
+  if(d){Z=JSON.parse(d);updateUI();updateActions();msg('📂 读档成功！年龄'+Z.age+'岁')}
+  else msg('没有存档数据')
+}
+function resetGame() {
+  if(!confirm('确定重来？当前存档会丢失。'))return;
+  localStorage.removeItem(STATE_KEY);
+  Z={age:25,day:1,health:80,mood:70,wealth:30,love:0,food:60,clean:70,stage:'young',partner:null,children:0,childAges:[],events:[],alive:true};
+  updateUI();updateActions();msg('🔄 重新开始')
+}
+
+// ==================== BOOT ====================
+updateUI();
+updateActions();
+// Auto-load if save exists
+if(localStorage.getItem(STATE_KEY)){msg('📂 检测到存档，点击读档恢复')}
+</script>
+</body>
+</html>
