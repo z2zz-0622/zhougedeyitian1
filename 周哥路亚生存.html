@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>周哥路亚生存</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Noto Sans SC','Microsoft YaHei',sans-serif;
+  background:linear-gradient(180deg,#87ceeb,#4a90d9,#2c5f2d,#1a3a1a);
+  min-height:100vh;display:flex;justify-content:center;align-items:center;padding:8px;
+}
+.g{width:400px;max-width:100%;background:rgba(255,255,255,.92);border-radius:20px;box-shadow:0 8px 50px rgba(0,0,0,.2);overflow:hidden}
+.h{background:linear-gradient(135deg,#166534,#15803d);padding:10px 16px;color:#fff;display:flex;justify-content:space-between;align-items:center;font-size:.8em;font-weight:700}
+.h span{opacity:.9}
+.scene{padding:16px;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.scene .lake{font-size:4em;animation:ripple 3s ease-in-out infinite}
+@keyframes ripple{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.scene .msg{font-size:.8em;color:#4b5563;margin-top:6px;min-height:22px}
+.scene .catch{font-size:2.5em;animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(0) rotate(-30deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 8px;padding:6px 14px}
+.st{display:flex;align-items:center;gap:4px;font-size:.68em;font-weight:600}
+.st .sn{width:30px;color:#6b7280}
+.st .sv{width:24px;text-align:center;font-weight:800}
+.st .sb{flex:1;height:5px;background:#e5e7eb;border-radius:3px;overflow:hidden}
+.st .sb div{height:100%;border-radius:3px;transition:width .4s}
+
+.inv{padding:4px 14px;font-size:.65em;color:#6366f1;text-align:center;min-height:18px}
+
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:6px 12px 10px}
+.acts button{
+  padding:10px 6px;border:1.5px solid #e5e7eb;border-radius:12px;
+  background:#fff;cursor:pointer;font-size:.68em;font-weight:600;color:#374151;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s
+}
+.acts button:hover{border-color:#16a34a;background:#f0fdf4;transform:translateY(-1px)}
+.acts button:active{transform:scale(.92)}
+.acts button .ic{font-size:1.6em}
+.acts button.die{background:#fef2f2}
+
+.bb{display:flex;padding:5px 10px;gap:5px;border-top:1px solid #f1f5f9}
+.bb button{flex:1;padding:6px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;font-size:.62em;font-weight:600;color:#6b7280}
+
+.toast{
+  position:fixed;bottom:60px;left:50%;transform:translateX(-50%);
+  background:#fff;border:2px solid #16a34a;padding:6px 16px;border-radius:16px;
+  font-size:.75em;font-weight:700;z-index:50;box-shadow:0 4px 16px rgba(22,163,74,.15);
+  pointer-events:none;animation:ti .2s,to .2s 1s forwards
+}
+@keyframes ti{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes to{from{opacity:1}to{opacity:0}}
+</style>
+</head>
+<body>
+<div class="g">
+<div class="h"><span>🎣 周哥路亚生存</span><span id="day">第1天</span><span id="weather">☀️晴</span></div>
+<div class="scene"><div class="lake" id="scene">🌊</div><div class="msg" id="msg">来到水库边。甩出第一竿——</div></div>
+<div class="stats" id="stats"></div>
+<div class="inv" id="inv"></div>
+<div class="acts" id="acts"></div>
+<div class="bb"><button onclick="S.save()">💾存档</button><button onclick="S.load()">📂读档</button><button onclick="S.reset()">🔄重来</button></div>
+</div>
+<script>
+// ===== STATE =====
+const cl=v=>Math.max(0,Math.min(100,v));
+const rd=n=>Math.floor(Math.random()*n);
+
+let F={
+  day:1, alive:true,
+  energy:80, water:80, food:80, money:20,
+  weather:'晴', weatherIdx:0,
+  rod:1, // 1=入门竿 2=进阶竿 3=专业竿 4=顶级竿
+  lure:1, // 1=基础饵 2=高级饵 3=神饵
+  fishCaught:[], // [{name,weight,value}]
+  totalCaught:0,
+  bestFish:null,
+  streak:0, // consecutive catches
+};
+
+const WEATHERS=['☀️晴','⛅多云','🌧小雨','💨大风','🌫雾天','🌤晴间多云'];
+const FISH_POOL=[
+  {n:'白条',w:'0.2斤',v:3,min:1},{n:'鲫鱼',w:'0.5斤',v:6,min:1},{n:'翘嘴',w:'1.2斤',v:12,min:1},
+  {n:'鲈鱼',w:'2斤',v:20,min:2},{n:'黑鱼',w:'3斤',v:30,min:2},{n:'鳜鱼',w:'4斤',v:45,min:3},
+  {n:'鲶鱼',w:'6斤',v:60,min:3},{n:'米级翘嘴',w:'10斤',v:120,min:3},{n:'巨鲈',w:'15斤',v:200,min:4},
+];
+
+// ===== RENDER =====
+function ui(){
+  document.getElementById('day').textContent='第'+F.day+'天';
+  document.getElementById('weather').textContent=WEATHERS[F.weatherIdx];
+  // Stats
+  const ss=[
+    ['⚡体力','energy','#ef4444'],[ '💧水分','water','#3b82f6'],
+    ['🍔饱腹','food','#f97316'],['💰金钱','money','#10b981']
+  ];
+  document.getElementById('stats').innerHTML=ss.map(([n,k,c])=>`<div class="st"><span class="sn">${n}</span><div class="sb"><div style="width:${F[k]}%;background:${c}"></div></div><span class="sv" style="color:${c}">${F[k]}</span></div>`).join('');
+  // Inventory
+  const rods=['入门竿','进阶竿','专业竿','顶级竿'];
+  const lures=['基础饵','高级饵','神饵'];
+  document.getElementById('inv').innerHTML=`🎣${rods[F.rod-1]} · 🪱${lures[F.lure-1]} · 🐟钓获${F.totalCaught}条`+(F.bestFish?` · 🏆${F.bestFish.n}${F.bestFish.w}`:'');
+}
+
+function renderActs(){
+  const acts=[
+    {n:'🎣钓鱼',f(){
+      F.energy=cl(F.energy-8);F.water=cl(F.water-3);F.food=cl(F.food-3);
+      // Weather effect
+      const wb=F.weatherIdx===0?10:F.weatherIdx===3?-15:F.weatherIdx===4?-5:0;
+      const luck=F.rod+F.lure+wb+Math.random()*40;
+      // Determine catch
+      let caught=false,fish=null;
+      for(let i=FISH_POOL.length-1;i>=0;i--){
+        const f=FISH_POOL[i];
+        if(luck>=f.min*10+rd(30)){
+          const w=parseFloat(f.w)+(Math.random()-.5)*parseFloat(f.w)*.3;
+          fish={n:f.n,w:w.toFixed(1)+'斤',v:Math.floor(f.v*(1+(Math.random()-.3)*.4))};
+          caught=true;break;
+        }
+      }
+      if(caught&&fish){
+        F.totalCaught++;F.fishCaught.push(fish);F.money=cl(F.money+fish.v);F.streak++;
+        if(!F.bestFish||fish.v>F.bestFish.v)F.bestFish=fish;
+        const el=document.getElementById('scene');
+        el.innerHTML=`<span class="catch">🐟</span>`;
+        setTimeout(()=>el.innerHTML='🌊',800);
+        msg(`🎣 ${fish.n}！${fish.w}！卖了${fish.v}💰！`+ (F.streak>=3?' 🔥连竿中！':''));
+        if(fish.v>=100)msg('🏆 巨物！！！水库里居然有这么大的！！');
+      }else{
+        F.streak=0;msg('💨 没口...换个标点再试试。'+(F.weatherIdx===3?'风太大了！':''));
+      }
+    }},
+    {n:'💧喝水',f(){F.water=cl(F.water+25);F.energy=cl(F.energy+2);msg('喝了几口水。舒服多了。')}},
+    {n:'🍔吃饭',f(){F.food=cl(F.food+25);F.energy=cl(F.energy+5);F.money=cl(F.money-2);msg('吃了份便当。')}},
+    {n:'😴休息',f(){F.energy=cl(F.energy+30);F.water=cl(F.water-5);F.food=cl(F.food-5);F.day++;F.weatherIdx=rd(WEATHERS.length);msg('💤 新的一天。天气：'+WEATHERS[F.weatherIdx])}},
+    {n:'🛒买饵',f(){
+      if(F.lure<3&&F.money>=15){F.lure++;F.money=cl(F.money-15);msg('买了包'+['','高级饵','神饵'][F.lure-1]+'！上鱼率更高了！')}
+      else if(F.lure>=3){msg('已经是神饵了！')}else{msg('需要15💰！')}
+    }},
+    {n:'🎣升级竿',f(){
+      if(F.rod<4&&F.money>=40){F.rod++;F.money=cl(F.money-40);msg('升级到'+['','进阶竿','专业竿','顶级竿'][F.rod-1]+'！能钓更大的鱼了！')}
+      else if(F.rod>=4){msg('已经是顶级竿了！')}else{msg('需要40💰！')}
+    }},
+    {n:'🐟卖鱼获',f(){
+      const val=F.fishCaught.reduce((s,f)=>s+f.v,0);
+      if(val>0){F.money=cl(F.money+val);msg('卖了所有鱼获！+'+val+'💰');F.fishCaught=[]}
+      else msg('没有鱼可以卖。')
+    }},
+  ];
+  document.getElementById('acts').innerHTML=acts.map((a,i)=>`<button><span class="ic">${a.n.slice(0,2)}</span>${a.n.slice(2)}</button>`).join('');
+  document.querySelectorAll('.acts button').forEach((b,i)=>{
+    b.addEventListener('click',()=>{
+      toast(acts[i].n.slice(0,2));
+      acts[i].f();
+      survive();ui();
+      if(F.alive)S.save();
+    });
+  });
+}
+
+// ===== SURVIVAL CHECKS =====
+function survive(){
+  if(F.energy<=0){die('体力耗尽','😵','体力不支倒在水库边。最后手里还攥着路亚竿。');return}
+  if(F.water<=0){die('脱水','💧','太久没喝水，在水库边脱水了。水就在旁边啊兄弟！！');return}
+  if(F.food<=0){die('饿死了','🍔','钓鱼太投入忘了吃饭。鱼是钓到了，人也饿没了。');return}
+  if(F.energy<15)msg('⚠️ 体力严重不足！快休息！');
+  if(F.water<15)msg('⚠️ 渴得不行了！快喝水！');
+  if(F.food<15)msg('⚠️ 饿得眼冒金星！快吃饭！');
+  if(F.money<=0&&F.food<20)msg('💰 没钱没食物了！快钓鱼卖钱！');
+}
+
+function die(title,icon,desc){
+  F.alive=false;renderActs();
+  const bg=document.createElement('div');bg.style.cssText='position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center';
+  bg.innerHTML=`<div style="background:#fff;border-radius:18px;padding:20px;max-width:360px;width:92%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:pop .3s ease-out"><div style="font-size:3em">${icon}</div><h3 style="color:#ef4444;margin:6px 0">${title}</h3><div style="font-size:.85em;color:#4b5563;line-height:1.6;white-space:pre-line">${desc}</div><div style="font-size:.7em;color:#9ca3af;margin:6px 0">存活${F.day}天·钓了${F.totalCaught}条鱼·🏆${F.bestFish?F.bestFish.n+F.bestFish.w:'无'}</div><button onclick="location.reload()" style="margin-top:8px;padding:8px 20px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:.8em;font-weight:700;cursor:pointer">🔄再来一竿</button></div>`;
+  document.body.appendChild(bg);
+}
+
+// ===== UTILS =====
+function msg(t){document.getElementById('msg').textContent=t}
+function toast(i){const t=document.createElement('div');t.className='toast';t.textContent=i;document.body.appendChild(t);setTimeout(()=>t.remove(),1300)}
+
+const S={
+  save(){localStorage.setItem('zg_fish',JSON.stringify(F))},
+  load(){const d=localStorage.getItem('zg_fish');if(d){F=JSON.parse(d);ui();renderActs();msg('📂读档！第'+F.day+'天')}else msg('无存档')},
+  reset(){if(confirm('重来？')){localStorage.removeItem('zg_fish');location.reload()}},
+};
+
+// ===== BOOT =====
+ui();renderActs();
+if(localStorage.getItem('zg_fish'))msg('📂有存档，点读档恢复。');
+</script>
+</body>
+</html>
